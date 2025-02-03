@@ -264,8 +264,33 @@ const routes: RouteRecordRaw[] = [
                     permiss: '11',  
                 },
                 component: () => import( '../views/pages/knowledge.vue'),
+            },{
+                path: '/knowledge',
+                name: 'knowledge',
+                meta: {
+                    title: '知识点管理',
+                    permiss: '11',  
+                },
+                component: () => import( '../views/pages/knowledge.vue'),
             },
-            
+            {
+                path: '/knowledge',
+                name: 'knowledge',
+                meta: {
+                    title: '知识点管理',
+                    permiss: '11',  
+                },
+                component: () => import( '../views/pages/knowledge.vue'),
+            },
+            {
+                path: '/nl-queries',
+                name: 'nlQueries',
+                meta: {
+                    title: '自然语言查询管理',
+                    permiss: '151',
+                },
+                component: () => import(  '../views/pages/nlQueries.vue'),
+            },
         ],
     },
     {

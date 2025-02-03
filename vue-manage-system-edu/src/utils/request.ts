@@ -2,7 +2,11 @@ import axios, { AxiosInstance, AxiosError, AxiosResponse, InternalAxiosRequestCo
 const API_URL = 'http://localhost:5000'; 
 const service: AxiosInstance = axios.create({
     baseURL: API_URL,
-    timeout: 50000000
+    timeout: 50000000,
+    withCredentials: true,  // 允许携带凭证
+    headers: {
+        'Content-Type': 'application/json'
+    }
 });
 
 // request.use 负责在每次请求发送之前对请求进行一些处理，比如设置请求头、处理 token 等

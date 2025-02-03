@@ -53,7 +53,7 @@ export const validateSQL = (data: { query_description: string; generated_sql: st
 };
 // export const uploadSchema = (data: FormData) => {
 //     return request({
-//         url: '/schema/upload',  // 后端接口 
+//         url: '/schema/upload',  
 //         data: data,
 //         headers: {
                 
@@ -81,13 +81,53 @@ export const uploadSqlFile = (data: FormData) => {
         }
     });
 };
-
-// 获取所有 SQL 文件记录
+ 
 export const getSqlFiles = () => {
     return request({
         url: '/schema/files',
         method: 'get'
     });
 };
+ 
+export const deleteSqlFile = (sqlId: number) => {
+    return request({
+        url: `/schema/sql/${sqlId}`,
+        method: 'delete'
+    });
+};
+ 
+export const updateSqlFile = (sqlId: number, data: { filename?: string; file_content?: string }) => {
+    return request({
+        url: `/schema/sql/${sqlId}`,
+        method: 'put',
+        data: data
+    });
+};
+
+// 生成自然语言查询
+export const generateNLQueries = (schemaIds: number[]) => {
+    return request({
+        url: `/llm/generate_nl_queries`,
+        method: 'post',
+        data: { schema_ids: schemaIds }
+    });
+};
+
+// 获取查询列表
+export const getNLQueries = (schemaId: number) => {
+    return request({
+        url: `/llm/nl_queries/${schemaId}`,
+        method: 'get'
+    });
+};
+
+// 生成SQL
+export const generateNLToSQL = (queryId: number) => {
+    return request({
+        url: `/llm/generate_sql/${queryId}`,
+        method: 'post'
+    });
+};
+
 
 //额，这个是src/api/index.ts,在这里进行接口管理，方便复用，以前每个页面都写请求函数，是有点重用率低

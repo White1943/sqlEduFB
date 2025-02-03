@@ -54,7 +54,7 @@ def generate_sql(query: str):
     SQL：SELECT * FROM orders WHERE user_id = 1;
 
     示例 4:
-    查询需求：查询所有购买了“Laptop”产品的用户。
+    查询需求：查询所有购买了"Laptop"产品的用户。
     SQL：SELECT u.username, o.product_name FROM users u JOIN orders o ON u.user_id = o.user_id WHERE o.product_name = 'Laptop';
     """
     system_message = {
@@ -111,7 +111,7 @@ def validate_sql(query_description: str, generated_sql: str):
     验证：SQL 符合描述。
 
     示例 4:
-    查询需求：查询所有购买了“Laptop”产品的用户。
+    查询需求：查询所有购买了"Laptop"产品的用户。
       SQL：SELECT u.username, o.product_name FROM users u JOIN orders o ON u.user_id = o.user_id WHERE o.product_name = 'Laptop';
     验证：SQL 符合描述。
 
@@ -158,6 +158,98 @@ def validate_sql(query_description: str, generated_sql: str):
         return result
     except Exception as e:
         print(f"Error validating SQL: {e}")
+        return None
+
+def generate_nl_queries_service(schema_content: str):
+    """
+    生成自然语言查询的服务函数
+    """
+    few_shot = """
+    示例输出：
+    @查询1：[涉及表：users] 查询所有年龄大于25岁的用户信息
+    @查询2：[涉及表：products] 查找所有价格高于1000元的产品
+    @查询3：[涉及表：users,orders] 统计2023年每个用户的总订单金额
+    """
+    
+    system_message = {
+        'role': 'system',
+        'content': f"""
+        你是一个SQL查询描述生成助手。根据给定的数据库Schema生成10个不同的查询描述。
+        数据库Schema如下：
+        {schema_content}
+        
+        请按照以下格式生成查询描述：
+        {few_shot}
+        
+        注意：
+        1. 每个查询都以@开头
+        2. 包含[涉及表：table1,table2]格式的表名
+        3. 查询描述要具体且符合业务场景
+        4. 包含不同难度的查询
+        """
+    }
+
+    try:
+        start_time = time.time()
+        completion = client.chat.completions.create(
+            model="qwen-plus",
+            messages=[{'role': 'system', 'content': system_message['content']}]
+        )
+        end_time = time.time()
+        print(f"生成查询描述耗时: {end_time - start_time}秒")
+
+        output_data = completion.model_dump()
+        result = output_data["choices"][0]["message"]["content"]
+        print("生成的查询描述:", result)
+
+        # 分割并清理查询描述
+        queries = [q.strip() for q in result.split('@') if q.strip()]
+        return queries
+
+    except Exception as e:
+        print(f"生成查询描述错误: {str(e)}")
+        return None
+
+def generate_sql_for_nl(schema_content: str, query_text: str, involved_tables: str):
+    """
+    为自然语言查询生成SQL的服务函数
+    """
+    system_message = {
+        'role': 'system',
+        'content': f"""
+        你是一个SQL生成助手。根据给定的数据库Schema和自然语言查询生成对应的SQL语句。
+        
+        数据库Schema：
+        {schema_content}
+        
+        涉及的表：{involved_tables}
+        自然语言查询：{query_text}
+        
+        请生成准确的SQL语句，确保：
+        1. 语法正确
+        2. 使用正确的表连接
+        3. 合理的条件筛选
+        4. 必要时使用子查询或聚合函数
+        """
+    }
+
+    try:
+        start_time = time.time()
+        completion = client.chat.completions.create(
+            model="qwen-plus",
+            messages=[{'role': 'system', 'content': system_message['content']}]
+        )
+        end_time = time.time()
+        print(f"生成SQL耗时: {end_time - start_time}秒")
+
+        output_data = completion.model_dump()
+        result = output_data["choices"][0]["message"]["content"]
+        print("生成的SQL:", result)
+        
+        return result.strip()
+
+    except Exception as e:
+        print(f"生成SQL错误: {str(e)}")
         return None
 
 

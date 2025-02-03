@@ -104,20 +104,37 @@ export const menuData: Menus[] = [
         title:'知识点管理',
         index:'/knowledge',
         icon:'sort',
-        // children:[
-        //     {
-        //         id: '111',
-        //         pid: '11',
-        //         index: '/table',
-        //         title: '知识点管理',
-        //     },
-        //     {
-        //         id: '112',
-        //         pid:'11' ,
-        //         index: '/upload',
-        //         title: '知识点分类',
-        //     },
-        // ]
+        children:[
+            {
+                id: '111',
+                pid: '11',
+                index: '/table',
+                title: '知识点管理',
+            },
+            {
+                id: '112',
+                pid:'11' ,
+                index: '/upload',
+                title: '知识点分类',
+            },
+        ]
+    },
+    {
+        id:'15',
+        title:'自然语言查询',
+        index:'/nl-queries',
+        icon:'sort',
+
+        children:[
+            {
+                id: '151',
+                pid: '15',
+                index: '/nl-queries',
+                title: '自然语言查询生成',
+            },
+
+         
+        ]
     },
     {
         id: '2',
