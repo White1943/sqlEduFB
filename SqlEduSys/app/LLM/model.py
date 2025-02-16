@@ -37,7 +37,7 @@ def get_llm_response(prompt: str):
             "messages": [
                 {
                     "role": "system",
-                    "content": "你是一个专业的SQL专家，精通数据库查询和自然语言处理。"
+                    "content": "你是一个专业的SQL教师，精通数据库查询和自然语言处理。"
                 },
                 {
                     "role": "user",

@@ -100,12 +100,13 @@ const handleUpload = async () => {
     try {
         const response = await uploadSqlFile(formData);
         console.log(response)
-        if (response.data.status === '201'||response.data.status === '200') {
+        if (response.data.status === 'success') {
             ElMessage.success(response.data.message || '文件上传成功');
             fetchSqlFiles(); // 刷新文件列表
         } else {
             ElMessage.error(response.data.message || '文件上传失败');
         }
+
 
 
     } catch (error) {

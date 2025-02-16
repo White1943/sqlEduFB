@@ -136,6 +136,22 @@ export const menuData: Menus[] = [
          
         ]
     },
+     
+    {
+        id: '16',
+        title: 'AI助手',
+        index: '16',
+        icon: 'ChatDotRound',
+        children: [
+            {
+                id: '161',
+                pid: '16',
+                index: '/ai-chat',
+                title: 'SQL对话学习',
+            }
+        ]
+    },
+
     {
         id: '2',
         title: '组件',

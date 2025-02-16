@@ -50,58 +50,73 @@ def generate_nl_queries():
         if not schema_ids:
             return ApiResponse.error(message="No schema IDs provided")
 
-        # 获取所有选中的schema内容
-        schemas = []
-        for schema_id in schema_ids:
-            schema = Sqls.query.get_or_404(schema_id)
-            schemas.append(schema)
-
-        # 合并所有schema内容
-        combined_schema = "\n\n".join(schema.file_content for schema in schemas)
+        # 获取所有选中的schema
+        schemas = [Sqls.query.get_or_404(schema_id) for schema_id in schema_ids]
         
         # 生成查询描述
-        queries = generate_nl_queries_service(combined_schema)
+        queries = generate_nl_queries_service(schemas)
         if not queries:
             return ApiResponse.error(message="Failed to generate queries")
             
-        # 保存到数据库（关联到第一个schema）
-        primary_schema_id = schema_ids[0]
+        # 保存到数据库
         for query in queries:
-            # 解析查询文本和涉及的表
-            table_start = query.find('[涉及表：') + 6
-            table_end = query.find(']')
-            if table_start > 5 and table_end > table_start:
-                involved_tables = query[table_start:table_end].strip()
-                query_text = query[table_end + 1:].strip()
-                
-                nl_query = NLQueries(
-                    query_text=query_text,
-                    involved_tables=involved_tables,
-                    schema_id=primary_schema_id,
-                    status='pending'
-                )
-                db.session.add(nl_query)
+            nl_query = NLQueries(
+                query_text=query['query_text'],
+                involved_tables=query['involved_tables'],
+                schema_ids=','.join(map(str, schema_ids)),  # 存储所有相关的schema_ids
+                status='pending'
+            )
+            db.session.add(nl_query)
         
         db.session.commit()
         return ApiResponse.success(message="Generated NL queries successfully")
         
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error generating queries: {str(e)}")
+        print(f"Error generating queries: {str(e)}")
         return ApiResponse.error(message=str(e))
 
-@llm_bp.route('/generate_sql/<int:query_id>', methods=['POST'])
-def generate_sql_endpoint(query_id):
+@llm_bp.route('/generate_sql', methods=['POST'])
+def generate_sql_endpoint():
     try:
+        data = request.get_json()
+        query_id = data.get('query_id')
+        query_text = data.get('query_text')
+        involved_tables = data.get('involved_tables')
+        schema_ids = data.get('schema_ids')
+
+        if not all([query_id, query_text, involved_tables, schema_ids]):
+            return ApiResponse.error(message="Missing required parameters")
+
         # 获取查询记录
         query = NLQueries.query.get_or_404(query_id)
-        schema = Sqls.query.get(query.schema_id)
+        
+        # 获取所有相关的schema内容
+        schema_contents = []
+        table_schemas = {}  # 用于存储每个表对应的schema内容
+        
+        for schema_id in schema_ids.split(','):
+            schema = Sqls.query.get_or_404(int(schema_id))
+            schema_contents.append(schema.file_content)
+            
+            # 解析schema内容，找到涉及的表的结构
+            for table in involved_tables.split(','):
+                table = table.strip()
+                # 在schema内容中查找表结构
+                if table.lower() in schema.file_content.lower():
+                    table_schemas[table] = schema.file_content
+
+        # 合并所有相关的schema内容
+        combined_schema = "\n\n".join(
+            f"-- Schema {schema_id}:\n{content}" 
+            for schema_id, content in table_schemas.items()
+        )
         
         # 生成SQL
         generated_sql = generate_sql_for_nl(
-            schema.file_content,
-            query.query_text,
-            query.involved_tables
+            combined_schema,
+            query_text,
+            involved_tables
         )
         
         if not generated_sql:
@@ -109,7 +124,7 @@ def generate_sql_endpoint(query_id):
         
         # 更新数据库
         query.generated_sql = generated_sql
-        query.status = 'approved'  # 或者根据需要设置其他状态
+        query.status = 'approved'
         db.session.commit()
         
         return ApiResponse.success(data={"sql": generated_sql})
@@ -122,16 +137,19 @@ def generate_sql_endpoint(query_id):
 @llm_bp.route('/nl_queries/<int:schema_id>', methods=['GET'])
 def get_nl_queries(schema_id):
     try:
-        queries = NLQueries.query.filter_by(schema_id=schema_id).all()
-        data = [{
-            'id': q.id,
-            'query_text': q.query_text,
-            'involved_tables': q.involved_tables,
-            'status': q.status,
-            'generated_sql': q.generated_sql,
-            'created_at': q.created_at.strftime('%Y-%m-%d %H:%M:%S')
-        } for q in queries]
+        # 使用 FIND_IN_SET 或正则表达式来精确匹配逗号分隔的ID
+        queries = NLQueries.query.filter(
+            db.text(f"FIND_IN_SET('{schema_id}', schema_ids) > 0")
+        ).all()
+        
+        # 或者使用正则表达式匹配
+        # pattern = f"(^{schema_id}$|^{schema_id},|,{schema_id}$|,{schema_id},)"
+        # queries = NLQueries.query.filter(
+        #     NLQueries.schema_ids.regexp(pattern)
+        # ).all()
+        
+        data = [query.to_dict() for query in queries]
         return ApiResponse.success(data=data)
     except Exception as e:
-        current_app.logger.error(f"Error fetching queries: {str(e)}")
+        print(f"Error fetching queries: {str(e)}")
         return ApiResponse.error(message=str(e))

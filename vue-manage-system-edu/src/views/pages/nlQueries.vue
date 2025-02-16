@@ -41,6 +41,7 @@
 
         <el-table :data="queries" style="width: 100%">
             <el-table-column prop="id" label="ID" width="80" />
+            <!-- <el-table-column prop="query_text" label="查询描述" /> -->
             <el-table-column prop="query_text" label="查询描述">
                 <template #default="scope">
                     <div v-if="!scope.row.isEditing">
@@ -53,7 +54,9 @@
                     />
                 </template>
             </el-table-column>
+
             <el-table-column prop="involved_tables" label="涉及表" />
+            <el-table-column prop="schema_ids" label="Schema IDs" />
             <el-table-column prop="status" label="状态" width="100">
                 <template #default="scope">
                     <el-tag :type="getStatusType(scope.row.status)">
@@ -187,19 +190,6 @@ const handleGenerateQueries = async () => {
     }
 };
 
-// 生成SQL
-const handleGenerateSQL = async (row) => {
-    try {
-        const response = await generateNLToSQL(row.id);
-        if (response.data.status === 'success') {
-            ElMessage.success('SQL生成成功');
-            fetchQueries();
-        }
-    } catch (error) {
-        ElMessage.error('SQL生成失败');
-    }
-};
-
 // 查看SQL
 const handleViewSQL = (row) => {
     dialogType.value = 'sql';
@@ -216,6 +206,27 @@ const getStatusType = (status) => {
         rejected: 'danger'
     };
     return statusMap[status] || '';
+};
+
+// 生成SQL
+const handleGenerateSQL = async (row) => {
+    try {
+        // 构造请求数据
+        const requestData = {
+            query_id: row.id,
+            query_text: row.query_text,
+            involved_tables: row.involved_tables,
+            schema_ids: row.schema_ids
+        };
+        
+        const response = await generateNLToSQL(requestData);
+        if (response.data.status === 'success') {
+            ElMessage.success('SQL生成成功');
+            fetchQueries();
+        }
+    } catch (error) {
+        ElMessage.error('SQL生成失败');
+    }
 };
 
 onMounted(() => {

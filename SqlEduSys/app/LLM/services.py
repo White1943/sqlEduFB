@@ -160,17 +160,28 @@ def validate_sql(query_description: str, generated_sql: str):
         print(f"Error validating SQL: {e}")
         return None
 
-def generate_nl_queries_service(schema_content: str):
+def generate_nl_queries_service(schemas):
     """
     生成自然语言查询的服务函数
-    """
-    few_shot = """
-    示例输出：
-    @查询1：[涉及表：users] 查询所有年龄大于25岁的用户信息
-    @查询2：[涉及表：products] 查找所有价格高于1000元的产品
-    @查询3：[涉及表：users,orders] 统计2023年每个用户的总订单金额
-    """
     
+    Args:
+        schemas: 列表，每个元素包含 id, filename 和 file_content
+    """
+    # 构建schema内容，包含表ID信息
+    schema_content = ""
+    schema_map = {}  # 用于存储表名到ID的映射
+    
+    for schema in schemas:
+        schema_content += f"\n-- Schema ID: {schema.id}\n"
+        schema_content += f"-- Filename: {schema.filename}\n"
+        schema_content += f"{schema.file_content}\n"
+        
+        # 解析CREATE TABLE语句，提取表名
+        for line in schema.file_content.split('\n'):
+            if line.strip().upper().startswith('CREATE TABLE'):
+                table_name = line.split('`')[-2] if '`' in line else line.split()[-1].strip('(')
+                schema_map[table_name.lower()] = schema.id
+
     system_message = {
         'role': 'system',
         'content': f"""
@@ -178,14 +189,22 @@ def generate_nl_queries_service(schema_content: str):
         数据库Schema如下：
         {schema_content}
         
-        请按照以下格式生成查询描述：
-        {few_shot}
+        请生成10个不同的查询描述，每个查询都要标注涉及的表名。
+        格式要求：@[表名1(ID),表名2(ID)] 查询描述
+        
+        示例：
+        @[users(1),orders(1)] 查找2023年下单次数超过5次的用户信息
+        @[products(2)] 统计所有价格超过1000元的产品
         
         注意：
-        1. 每个查询都以@开头
+         1. 每个查询都以@开头
         2. 包含[涉及表：table1,table2]格式的表名
         3. 查询描述要具体且符合业务场景
         4. 包含不同难度的查询
+        5. 确保表名完整且包含对应的Schema ID
+        6. 不要有额外的文字说明
+
+
         """
     }
 
@@ -202,8 +221,30 @@ def generate_nl_queries_service(schema_content: str):
         result = output_data["choices"][0]["message"]["content"]
         print("生成的查询描述:", result)
 
-        # 分割并清理查询描述
-        queries = [q.strip() for q in result.split('@') if q.strip()]
+        # 处理返回结果，确保正确解析表名和ID
+        queries = []
+        for query in result.split('\n'):
+            if '@[' in query and ']' in query:
+                tables_part = query[query.find('[') + 1:query.find(']')]
+                description = query[query.find(']') + 1:].strip()
+                
+                # 解析表名和ID
+                tables_info = []
+                table_ids = []
+                for table_ref in tables_part.split(','):
+                    table_ref = table_ref.strip()
+                    if '(' in table_ref and ')' in table_ref:
+                        table_name = table_ref[:table_ref.find('(')].strip()
+                        table_id = table_ref[table_ref.find('(') + 1:table_ref.find(')')].strip()
+                        tables_info.append(f"{table_name}")
+                        table_ids.append(table_id)
+                
+                queries.append({
+                    'query_text': description,
+                    'involved_tables': ','.join(tables_info),
+                    'involved_table_ids': ','.join(table_ids)
+                })
+        
         return queries
 
     except Exception as e:
@@ -213,6 +254,11 @@ def generate_nl_queries_service(schema_content: str):
 def generate_sql_for_nl(schema_content: str, query_text: str, involved_tables: str):
     """
     为自然语言查询生成SQL的服务函数
+    
+    Args:
+        schema_content: 合并后的schema内容，包含所有相关表的结构
+        query_text: 自然语言查询描述
+        involved_tables: 涉及的表名，逗号分隔
     """
     system_message = {
         'role': 'system',
@@ -226,10 +272,10 @@ def generate_sql_for_nl(schema_content: str, query_text: str, involved_tables: s
         自然语言查询：{query_text}
         
         请生成准确的SQL语句，确保：
-        1. 语法正确
-        2. 使用正确的表连接
-        3. 合理的条件筛选
-        4. 必要时使用子查询或聚合函数
+        1. 只使用提供的Schema中定义的表和字段
+        2. 正确处理表之间的关系
+        3. 使用正确的SQL语法和函数
+        4. 查询结果满足自然语言描述的需求
         """
     }
 
@@ -237,16 +283,18 @@ def generate_sql_for_nl(schema_content: str, query_text: str, involved_tables: s
         start_time = time.time()
         completion = client.chat.completions.create(
             model="qwen-plus",
-            messages=[{'role': 'system', 'content': system_message['content']}]
+            messages=[
+                system_message,
+                {'role': 'user', 'content': query_text}
+            ]
         )
         end_time = time.time()
         print(f"生成SQL耗时: {end_time - start_time}秒")
 
-        output_data = completion.model_dump()
-        result = output_data["choices"][0]["message"]["content"]
+        result = completion.choices[0].message.content
         print("生成的SQL:", result)
-        
         return result.strip()
+
 
     except Exception as e:
         print(f"生成SQL错误: {str(e)}")

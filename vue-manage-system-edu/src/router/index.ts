@@ -291,6 +291,15 @@ const routes: RouteRecordRaw[] = [
                 },
                 component: () => import(  '../views/pages/nlQueries.vue'),
             },
+            {
+                path: '/ai-chat',
+                name: 'ai-chat',
+                meta: {
+                    title: 'SQL对话学习',
+                    permiss: '161',
+                },
+                component: () => import(/* webpackChunkName: "ai-chat" */ '../views/pages/aiChat.vue'),
+            },
         ],
     },
     {

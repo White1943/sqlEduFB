@@ -122,12 +122,58 @@ export const getNLQueries = (schemaId: number) => {
 };
 
 // 生成SQL
-export const generateNLToSQL = (queryId: number) => {
+export const generateNLToSQL = (data) => {
     return request({
-        url: `/llm/generate_sql/${queryId}`,
-        method: 'post'
+        url: '/llm/generate_sql',
+        method: 'post',
+        data
     });
 };
 
+// 获取dashboard统计数据
+export const getStats = () => {
+    return request({
+        url: '/dashboard/stats',
+        method: 'get'
+    });
+};
+
+// 获取最近的查询记录
+export const getRecentQueries = () => {
+    return request({
+        url: '/dashboard/recent-queries',
+        method: 'get'
+    });
+};
+// 获取模型列表
+export const getModels = () => {
+    return request({
+        url: '/chat/models',
+        method: 'get'
+    });
+};
+
+// 获取聊天历史
+export const getChatHistory = () => {
+    return request({
+        url: '/chat/messages',
+        method: 'get'
+    });
+};
+
+// 发送聊天消息
+export const sendChatMessage = (data: {
+    model: string;
+    messages: Array<{
+        role: string;
+        content: string;
+    }>;
+}) => {
+    return request({
+        url: '/chat/chat',
+        method: 'post',
+        data
+    });
+};
 
 //额，这个是src/api/index.ts,在这里进行接口管理，方便复用，以前每个页面都写请求函数，是有点重用率低
