@@ -100,24 +100,25 @@ export const menuData: Menus[] = [
         ]
     },
     {
-        id:'11',
+        id:'153',
         title:'知识点管理',
-        index:'/knowledge',
+        index:'/knowledge-manage',
         icon:'sort',
-        children:[
-            {
-                id: '111',
-                pid: '11',
-                index: '/table',
-                title: '知识点管理',
-            },
-            {
-                id: '112',
-                pid:'11' ,
-                index: '/upload',
-                title: '知识点分类',
-            },
-        ]
+        // permiss:'11',
+        // children:[
+        //     {
+        //         id: '111',
+        //         pid: '11',
+        //         index: '/table',
+        //         title: '知识点管理',
+        //     },
+        //     {
+        //         id: '112',
+        //         pid:'11' ,
+        //         index: '/upload',
+        //         title: '知识点分类',
+        //     },
+        // ]
     },
     {
         id:'15',

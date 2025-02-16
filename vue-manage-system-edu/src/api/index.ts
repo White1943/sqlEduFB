@@ -175,5 +175,83 @@ export const sendChatMessage = (data: {
         data
     });
 };
+export const getKnowledgeCategories = () => {
+    return request({
+        url: '/knowledge/categories',
+        method: 'get'
+    });
+};
+
+export const addKnowledgeCategory = (data: {
+    category_name: string;
+    description: string;
+}) => {
+    return request({
+        url: '/knowledge/categories',
+        method: 'post',
+        data
+    });
+};
+export const updateKnowledgeCategory = (id: number, data: {
+    category_name: string;
+    description: string;
+}) => {
+    return request({
+        url: `/knowledge/categories/${id}`,
+        method: 'put',
+        data
+    });
+};
+
+export const deleteKnowledgeCategory = (id: number) => {
+    return request({
+        url: `/knowledge/categories/${id}`,
+        method: 'delete'
+    });
+};
+
+
+
+export const getKnowledgePoints = () => {
+    return request({
+        url: '/knowledge/points',
+        method: 'get'
+    });
+};
+
+export const addKnowledgePoint = (data: {
+    category_id: number;
+    point_name: string;
+    description: string;
+    example_sql: string;
+    explanation: string;
+}) => {
+    return request({
+        url: '/knowledge/points',
+        method: 'post',
+        data
+    });
+};
+
+export const updateKnowledgePoint = (id: number, data: {
+    category_id: number;
+    point_name: string;
+    description: string;
+    example_sql: string;
+    explanation: string;
+}) => {
+    return request({
+        url: `/knowledge/points/${id}`,
+        method: 'put',
+        data
+    });
+};
+
+export const deleteKnowledgePoint = (id: number) => {
+    return request({
+        url: `/knowledge/points/${id}`,
+        method: 'delete'
+    });
+};
 
 //额，这个是src/api/index.ts,在这里进行接口管理，方便复用，以前每个页面都写请求函数，是有点重用率低

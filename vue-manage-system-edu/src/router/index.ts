@@ -256,32 +256,17 @@ const routes: RouteRecordRaw[] = [
                 },
                 component: () => import(/* webpackChunkName: "sql-validator" */ '../views/pages/schemaTable.vue'),
             },
+ 
             {
-                path: '/knowledge',
-                name: 'knowledge',
+                path: '/knowledge-manage',
+                name: 'knowledgeManage',
                 meta: {
                     title: '知识点管理',
-                    permiss: '11',  
+                    permiss: '153',  
                 },
-                component: () => import( '../views/pages/knowledge.vue'),
-            },{
-                path: '/knowledge',
-                name: 'knowledge',
-                meta: {
-                    title: '知识点管理',
-                    permiss: '11',  
-                },
-                component: () => import( '../views/pages/knowledge.vue'),
+                component: () => import( '../views/pages/knowledgeManage.vue'),
             },
-            {
-                path: '/knowledge',
-                name: 'knowledge',
-                meta: {
-                    title: '知识点管理',
-                    permiss: '11',  
-                },
-                component: () => import( '../views/pages/knowledge.vue'),
-            },
+            
             {
                 path: '/nl-queries',
                 name: 'nlQueries',

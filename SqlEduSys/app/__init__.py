@@ -36,6 +36,7 @@ def create_app(config_class=Config):
     app.register_blueprint(llm_bp, url_prefix='/llm')
     from app.chat.views import chat_bp
     app.register_blueprint(chat_bp, url_prefix='/chat')
-
+    from .knowledge import knowledge_bp
+    app.register_blueprint(knowledge_bp, url_prefix='/knowledge')
     return app
 # app\__init__.py
