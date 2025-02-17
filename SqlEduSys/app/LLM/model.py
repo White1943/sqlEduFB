@@ -4,6 +4,11 @@ import requests
 from flask import current_app
 from datetime import datetime
 from app.utils.response import ApiResponse
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+import logging
+import os
+from openai import OpenAI
 
 class LLMResponse:
     def __init__(self, text: str, error: Optional[str] = None):
@@ -11,60 +16,103 @@ class LLMResponse:
         self.error = error
         self.timestamp = datetime.now()
 
+# 创建 OpenAI 客户端
+client = OpenAI(
+    api_key=os.getenv("DASHSCOPE_API_KEY"),
+    base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+)
+
 def get_llm_response(prompt: str) -> str:
     """
     调用大模型API获取响应
-    
-    Args:
-        prompt: 输入的prompt文本
-    
-    Returns:
-        str: 模型生成的响应文本，失败时返回None
     """
     try:
-        # API配置
-        api_url = current_app.config.get('LLM_API_URL', 'http://localhost:8000/v1/chat/completions')
-        api_key = current_app.config.get('LLM_API_KEY', '')
+        current_app.logger.info("Sending request to LLM API...")
         
-        # 构建请求数据
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {api_key}'
-        }
+        # 添加 few-shot 示例
+        few_shot_examples = """
+        示例数据库结构：
+        CREATE TABLE users (
+            id INT PRIMARY KEY,
+            username VARCHAR(50),
+            email VARCHAR(100),
+            is_active BOOLEAN
+        );
         
-        data = {
-            "model": "Qwen-7B-Chat",
-            "messages": [
+        CREATE TABLE orders (
+            id INT PRIMARY KEY,
+            user_id INT,
+            total DECIMAL(10,2),
+            created_at TIMESTAMP
+        );
+
+        知识点示例：
+        名称：多表连接查询
+        描述：掌握基本的表连接操作
+        示例SQL：SELECT * FROM users u JOIN orders o ON u.id = o.user_id;
+
+        生成的查询描述示例：
+        @[users,orders] 查找最近一个月内下单金额超过1000元的用户信息
+        @[users] 统计所有活跃用户的数量和非活跃用户的数量
+        @[orders] 分析每个月的订单总金额变化趋势
+
+        注意：
+        1. 每个查询都以 @[表名1,表名2,...] 开头，标明涉及的表
+        2. 表名之间用逗号分隔，不能有空格
+        3. 查询描述要清晰明确，体现知识点特点
+        4. 确保查询在给定表结构中可执行
+        """
+        
+        # 构建完整的 prompt
+        full_prompt = f"""
+        {few_shot_examples}
+        
+        现在，请根据以下信息生成新的查询描述：
+        
+        {prompt}
+        
+        请确保：
+        1. 严格按照 @[表名1,表名2] 查询描述 的格式输出
+        2. 表名必须来自提供的数据库结构
+        3. 查询描述要体现知识点特征
+        4. 查询要有实际业务意义
+        """
+        
+        completion = client.chat.completions.create(
+            model="qwen-plus",
+            messages=[
                 {
                     "role": "system",
-                    "content": "你是一个专业的SQL教师，精通数据库查询和自然语言处理。"
+                    "content": "你是一个专业的SQL教师，精通数据库查询和自然语言处理。你的任务是生成符合格式要求的自然语言查询描述。"
                 },
                 {
                     "role": "user",
-                    "content": prompt
+                    "content": full_prompt
                 }
-            ],
-            "temperature": 0.7,
-            "max_tokens": 2000
-        }
+            ]
+        )
         
-        # 发送请求
-        response = requests.post(api_url, headers=headers, json=data, timeout=30)
-        response.raise_for_status()
-        
-        # 解析响应
-        result = response.json()
-        if 'choices' in result and len(result['choices']) > 0:
-            response_text = result['choices'][0]['message']['content']
-            # 记录成功的调用
-            log_llm_call(prompt, response_text)
-            return response_text
+        if completion and completion.choices:
+            response_text = completion.choices[0].message.content
+            # 验证响应格式
+            lines = response_text.strip().split('\n')
+            valid_lines = []
+            for line in lines:
+                line = line.strip()
+                if line and line.startswith('@[') and ']' in line:
+                    valid_lines.append(line)
+            
+            if valid_lines:
+                return '\n'.join(valid_lines)
+            else:
+                current_app.logger.error("Invalid response format")
+                return None
         else:
             current_app.logger.error("Invalid response format from LLM API")
             return None
             
-    except requests.exceptions.RequestException as e:
-        current_app.logger.error(f"LLM API request failed: {str(e)}")
+    except Exception as e:
+        current_app.logger.error(f"Error in get_llm_response: {str(e)}")
         return None
 
 def log_llm_call(prompt: str, response: LLMResponse) -> None:

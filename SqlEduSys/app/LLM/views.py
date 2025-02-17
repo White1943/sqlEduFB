@@ -60,6 +60,7 @@ def generate_nl_queries():
         schema_info = "\n".join([schema.file_content for schema in schemas])  
         generated_queries = []
         for point in points:
+            # 修改这里，正确获取 point 的属性
             point_id = point.get('id')
             count = point.get('generateCount', 1)
             
@@ -76,28 +77,35 @@ def generate_nl_queries():
                     基于以下数据库表结构：
                     {schema_info}
                     
-                    以及这个知识点的要求：
-                    知识点：{knowledge_point.point_name}
+                    知识点信息：
+                    名称：{knowledge_point.point_name}
                     描述：{knowledge_point.description}
                     示例SQL：{knowledge_point.example_sql}
-                    解释：{knowledge_point.explanation}
+                    需要生成的查询数量：1
                     
-                    请生成一个新的自然语言查询描述。
+                    请生成一个新的查询描述，格式为：
+                    @[表名1,表名2] 查询描述
                     """
                     
                     # 调用 LLM 生成查询
                     query_text = get_llm_response(prompt)
                     if query_text:  # 检查是否成功获取响应
-                        # 创建新的查询记录
-                        new_query = NLQueries(
-                            query_text=query_text,
-                            involved_tables=",".join([schema.filename for schema in schemas]),
-                            schema_ids=",".join(map(str, schema_ids)),
-                            knowledge_point_id=point_id,
-                            status='pending'
-                        )
-                        db.session.add(new_query)
-                        generated_queries.append(new_query)
+                        # 解析查询文本
+                        if query_text.startswith('@[') and ']' in query_text:
+                            tables = query_text[2:query_text.find(']')].split(',')
+                            description = query_text[query_text.find(']')+1:].strip()
+                            
+                            # 创建新的查询记录
+                            new_query = NLQueries(
+                                query_text=description,
+                                involved_tables=",".join(tables),  # 使用解析出的表名
+                                schema_ids=",".join(map(str, schema_ids)),
+                                knowledge_point_id=point_id,
+                                status='pending'
+                            )
+                            db.session.add(new_query)
+                            generated_queries.append(new_query)
+                
                 except Exception as e:
                     current_app.logger.error(f"生成单条查询失败: {str(e)}")
                     continue
@@ -114,6 +122,7 @@ def generate_nl_queries():
                 )
             except Exception as e:
                 db.session.rollback()
+                current_app.logger.error(f"保存查询失败: {str(e)}")
                 return ApiResponse.error(message=f"保存查询失败: {str(e)}")
         else:
             return ApiResponse.error(message="未能生成任何查询")

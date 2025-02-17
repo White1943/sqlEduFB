@@ -11,7 +11,8 @@ migrate = Migrate()
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
-
+    # 设置测试模式
+    # app.config['TESTING'] = True  # 临时启用测试模式
     # 配置CORS，允许所有路由
     CORS(app, resources={
         r"/*": {

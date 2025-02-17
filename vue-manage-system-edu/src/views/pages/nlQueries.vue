@@ -374,26 +374,28 @@ const handleGenerateQueries = async () => {
             background: 'rgba(0, 0, 0, 0.7)'
         });
 
-        const response = await generateQueries({
+        // 确保数据格式正确
+        const requestData = {
             schema_ids: selectedSchemaIds.value,
             points: selectedPoints.value.map(point => ({
                 id: point.id,
-                generateCount: point.generateCount || 1
+                generateCount: parseInt(point.generateCount) || 1  // 确保是数字
             }))
-        });
+        };
 
+        const response = await generateQueries(requestData);
         loading.close();
 
         if (response.data.status === 'success') {
             ElMessage.success(response.data.message);
-            fetchQueries(); // 刷新查询列表
+            await fetchQueries(); // 等待查询列表刷新完成
             clearSelectedPoints(); // 清空已选知识点
         } else {
-            ElMessage.error(response.data.message);
+            ElMessage.error(response.data.message || '生成查询失败');
         }
-    } catch (error) {
+    } catch (error: any) {
         console.error('生成查询失败:', error);
-        ElMessage.error('生成查询失败');
+        ElMessage.error(error.response?.data?.message || '生成查询失败');
     }
 };
 
@@ -456,9 +458,8 @@ const fetchQueries = async () => {
     }
     
     try {
-        // 直接传递选中的schema_ids数组
         const response = await getNLQueries({
-            schema_ids: selectedSchemaIds.value,  // 不需要join，直接传递数组
+            schema_ids: selectedSchemaIds.value,
             page: currentPage.value,
             page_size: pageSize.value
         });
@@ -466,10 +467,12 @@ const fetchQueries = async () => {
         if (response.data.status === 'success') {
             queries.value = response.data.data.items;
             total.value = response.data.data.total;
+        } else {
+            ElMessage.error(response.data.message || '获取查询列表失败');
         }
-    } catch (error) {
+    } catch (error: any) {
         console.error('获取查询列表失败:', error);
-        ElMessage.error('获取查询列表失败');
+        ElMessage.error(error.response?.data?.message || '获取查询列表失败');
     }
 };
 

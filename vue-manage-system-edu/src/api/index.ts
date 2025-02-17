@@ -120,9 +120,15 @@ export const generateQueries = (data: {
     }>;
 }) => {
     return request({
-        url: `/llm/generate_nl_queries`,
+        url: '/llm/generate_nl_queries',
         method: 'post',
-        data
+        data: {
+            schema_ids: data.schema_ids,
+            points: data.points.map(point => ({
+                id: point.id,
+                generateCount: point.generateCount || 1
+            }))
+        }
     });
 };
 // 获取查询列表
@@ -136,7 +142,7 @@ export const getNLQueries = (params: {
         method: 'get',
         params: {
             ...params,
-            schema_ids: params.schema_ids.join(',')
+            schema_ids: params.schema_ids.join(',')  // 转换为逗号分隔的字符串
         }
     });
 };
