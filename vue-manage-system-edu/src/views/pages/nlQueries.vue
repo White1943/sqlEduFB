@@ -3,7 +3,7 @@
         <div class="header">
             <h2>自然语言查询管理</h2>
             <div class="header-right">
-                <!-- 添加多选的 schema 选择器 -->
+                <!-- Schema选择器 -->
                 <el-select
                     v-model="selectedSchemaIds"
                     multiple
@@ -29,19 +29,61 @@
                         </el-button>
                     </el-option>
                 </el-select>
+
+                <!-- 知识点选择按钮 -->
+                <el-button 
+                    type="primary" 
+                    @click="showKnowledgeDialog"
+                    style="margin-right: 15px;"
+                >
+                    选择知识点
+                </el-button>
+
                 <el-button 
                     type="primary" 
                     @click="handleGenerateQueries"
-                    :disabled="!selectedSchemaIds.length"
+                    :disabled="!canGenerate"
                 >
                     生成查询
                 </el-button>
             </div>
         </div>
 
-        <el-table :data="queries" style="width: 100%">
+        <!-- 已选知识点展示 -->
+        <div class="selected-points" v-if="selectedPoints.length">
+            <h3>已选知识点：</h3>
+            <el-row :gutter="20">
+                <el-col :span="8" v-for="point in selectedPoints" :key="point.id">
+                    <el-card class="point-card">
+                        <template #header>
+                            <div class="point-header">
+                                <span>{{ point.point_name }}</span>
+                                <el-input-number 
+                                    v-model="point.generateCount" 
+                                    :min="1" 
+                                    :max="10"
+                                    size="small"
+                                />
+                            </div>
+                        </template>
+                        <div class="point-content">
+                            <p>{{ point.description }}</p>
+                            <el-button 
+                                type="danger" 
+                                link 
+                                @click="removePoint(point)"
+                            >
+                                移除
+                            </el-button>
+                        </div>
+                    </el-card>
+                </el-col>
+            </el-row>
+        </div>
+
+        <!-- 查询列表 -->
+        <el-table :data="queries" style="width: 100%; margin-top: 20px">
             <el-table-column prop="id" label="ID" width="80" />
-            <!-- <el-table-column prop="query_text" label="查询描述" /> -->
             <el-table-column prop="query_text" label="查询描述">
                 <template #default="scope">
                     <div v-if="!scope.row.isEditing">
@@ -54,9 +96,8 @@
                     />
                 </template>
             </el-table-column>
-
             <el-table-column prop="involved_tables" label="涉及表" />
-            <el-table-column prop="schema_ids" label="Schema IDs" />
+            <el-table-column prop="knowledge_point" label="知识点" />
             <el-table-column prop="status" label="状态" width="100">
                 <template #default="scope">
                     <el-tag :type="getStatusType(scope.row.status)">
@@ -100,6 +141,51 @@
             </el-table-column>
         </el-table>
 
+        <!-- 分页器 -->
+        <div class="pagination">
+            <el-pagination
+                v-model:current-page="currentPage"
+                v-model:page-size="pageSize"
+                :page-sizes="[10, 20, 50, 100]"
+                :total="total"
+                layout="total, sizes, prev, pager, next, jumper"
+                @size-change="handleSizeChange"
+                @current-change="handleCurrentChange"
+            />
+        </div>
+
+        <!-- 知识点选择对话框 -->
+        <el-dialog
+            v-model="knowledgeDialog.visible"
+            title="选择知识点"
+            width="70%"
+        >
+            <div class="knowledge-filter">
+                <el-select
+                    v-model="knowledgeDialog.categoryId"
+                    placeholder="选择分类"
+                    clearable
+                    @change="fetchDialogPoints"
+                >
+                    <el-option
+                        v-for="category in categories"
+                        :key="category.id"
+                        :label="category.category_name"
+                        :value="category.id"
+                    />
+                </el-select>
+            </div>
+            <el-table
+                :data="knowledgeDialog.points"
+                @selection-change="handleSelectionChange"
+            >
+                <el-table-column type="selection" width="55" />
+                <el-table-column prop="category_name" label="分类" />
+                <el-table-column prop="point_name" label="知识点" />
+                <el-table-column prop="description" label="描述" show-overflow-tooltip />
+            </el-table>
+        </el-dialog>
+
         <!-- SQL预览对话框 -->
         <el-dialog
             v-model="dialogVisible"
@@ -113,9 +199,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { ElMessage } from 'element-plus';
-import { generateNLQueries, getNLQueries, generateNLToSQL, getSqlFiles } from '@/api/index';
+import { 
+    generateNLQueries, 
+    getNLQueries, 
+    generateNLToSQL, 
+    getSqlFiles,
+    getKnowledgeCategories,
+    getKnowledgePointsPaginated 
+} from '@/api/index';
 
 const queries = ref([]);
 const dialogVisible = ref(false);
@@ -125,6 +218,23 @@ const currentSQL = ref('');
 const currentSchema = ref('');
 const selectedSchemaIds = ref([]);
 const schemas = ref([]);
+const currentPage = ref(1);
+const pageSize = ref(10);
+const total = ref(0);
+const selectedPoints = ref([]);
+const categories = ref([]);
+
+const knowledgeDialog = ref({
+    visible: false,
+    categoryId: null,
+    points: [],
+    selectedPoints: []
+});
+
+// 计算是否可以生成查询
+const canGenerate = computed(() => {
+    return selectedSchemaIds.value.length > 0 || selectedPoints.value.length > 0;
+});
 
 // 获取所有schema
 const fetchSchemas = async () => {
@@ -146,44 +256,85 @@ const viewSchema = (schema) => {
     dialogVisible.value = true;
 };
 
-// 获取查询列表
-const fetchQueries = async () => {
-    if (!selectedSchemaIds.value.length) {
-        queries.value = [];
-        return;
-    }
-    
+// 获取分类列表
+const fetchCategories = async () => {
     try {
-        // 获取所有选中schema的查询列表
-        const allQueries = [];
-        for (const schemaId of selectedSchemaIds.value) {
-            const response = await getNLQueries(schemaId);
-            if (response.data.status === 'success') {
-                allQueries.push(...response.data.data);
-            }
+        const res = await getKnowledgeCategories();
+        if (res.data.status === 'success') {
+            categories.value = res.data.data;
         }
-        // 按创建时间排序
-        queries.value = allQueries.sort((a, b) => 
-            new Date(b.created_at) - new Date(a.created_at)
-        );
     } catch (error) {
-        ElMessage.error('获取查询列表失败');
+        ElMessage.error('获取分类列表失败');
     }
+};
+
+// 获取知识点列表
+const fetchDialogPoints = async () => {
+    try {
+        const res = await getKnowledgePointsPaginated({
+            page: 1,
+            pageSize: 1000,  // 暂时获取所有知识点
+            category_id: knowledgeDialog.value.categoryId
+        });
+        if (res.data.status === 'success') {
+            knowledgeDialog.value.points = res.data.data.items;
+        }
+    } catch (error) {
+        ElMessage.error('获取知识点列表失败');
+    }
+};
+
+// 处理知识点选择变化
+const handleSelectionChange = (selection) => {
+    knowledgeDialog.value.selectedPoints = selection;
+};
+
+// 确认选择知识点
+const confirmSelection = () => {
+    const newPoints = knowledgeDialog.value.selectedPoints.map(point => ({
+        ...point,
+        generateCount: 1  // 默认生成1条
+    }));
+    
+    // 合并已选和新选的知识点，避免重复
+    const existingIds = selectedPoints.value.map(p => p.id);
+    const pointsToAdd = newPoints.filter(p => !existingIds.includes(p.id));
+    selectedPoints.value.push(...pointsToAdd);
+    
+    knowledgeDialog.value.visible = false;
+};
+
+// 移除知识点
+const removePoint = (point) => {
+    selectedPoints.value = selectedPoints.value.filter(p => p.id !== point.id);
+};
+
+// 显示知识点选择对话框
+const showKnowledgeDialog = async () => {
+    knowledgeDialog.value.visible = true;
+    await fetchCategories();
+    await fetchDialogPoints();
 };
 
 // 生成查询
 const handleGenerateQueries = async () => {
-    if (!selectedSchemaIds.value.length) {
-        ElMessage.warning('请先选择数据库模式');
+    if (!selectedSchemaIds.value.length && !selectedPoints.value.length) {
+        ElMessage.warning('请选择数据库模式或知识点');
         return;
     }
 
     try {
-        // 发送所有选中的schema id，让后端基于这些schema生成查询
-        const response = await generateNLQueries(selectedSchemaIds.value);
+        const response = await generateNLQueries({
+            schema_ids: selectedSchemaIds.value,
+            knowledge_points: selectedPoints.value.map(point => ({
+                id: point.id,
+                count: point.generateCount
+            }))
+        });
+        
         if (response.data.status === 'success') {
             ElMessage.success('生成查询成功');
-            fetchQueries();  // 刷新查询列表
+            fetchQueries();
         }
     } catch (error) {
         ElMessage.error('生成查询失败');
@@ -229,6 +380,42 @@ const handleGenerateSQL = async (row) => {
     }
 };
 
+// 分页处理
+const handleSizeChange = (val: number) => {
+    pageSize.value = val;
+    fetchQueries();
+};
+
+const handleCurrentChange = (val: number) => {
+    currentPage.value = val;
+    fetchQueries();
+};
+
+// 修改获取查询列表的方法
+const fetchQueries = async () => {
+    if (!selectedSchemaIds.value.length) {
+        queries.value = [];
+        return;
+    }
+    
+    try {
+        const allQueries = [];
+        for (const schemaId of selectedSchemaIds.value) {
+            const response = await getNLQueries(schemaId, {
+                page: currentPage.value,
+                pageSize: pageSize.value
+            });
+            if (response.data.status === 'success') {
+                allQueries.push(...response.data.data.items);
+                total.value = response.data.data.total;
+            }
+        }
+        queries.value = allQueries;
+    } catch (error) {
+        ElMessage.error('获取查询列表失败');
+    }
+};
+
 onMounted(() => {
     fetchSchemas();
 });
@@ -256,6 +443,30 @@ watch(selectedSchemaIds, (newVal) => {
 .header-right {
     display: flex;
     align-items: center;
+}
+.selected-points {
+    margin: 20px 0;
+}
+.point-card {
+    margin-bottom: 15px;
+}
+.point-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.point-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.knowledge-filter {
+    margin-bottom: 20px;
+}
+.pagination {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
 }
 pre {
     white-space: pre-wrap;

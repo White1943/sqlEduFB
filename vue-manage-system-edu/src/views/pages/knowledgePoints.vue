@@ -1,41 +1,45 @@
 <template>
-    <div class="knowledge-manage">
+    <div class="points-manage">
         <div class="header">
             <h2>知识点管理</h2>
-            <div class="header-right">
-                <el-button type="primary" @click="handleAddCategory">
-                    新增分类
-                </el-button>
+            <div class="search-area">
+                <el-select
+                    v-model="searchForm.category_id"
+                    placeholder="选择分类"
+                    clearable
+                    @change="handleSearch"
+                    style="width: 200px; margin-right: 15px;"
+                >
+                    <el-option
+                        v-for="category in categories"
+                        :key="category.id"
+                        :label="category.category_name"
+                        :value="category.id"
+                    />
+                </el-select>
+                <el-input
+                    v-model="searchForm.keyword"
+                    placeholder="搜索知识点名称"
+                    style="width: 200px; margin-right: 15px;"
+                    clearable
+                    @keyup.enter="handleSearch"
+                >
+                    <template #prefix>
+                        <el-icon><Search /></el-icon>
+                    </template>
+                </el-input>
                 <el-button type="primary" @click="handleAddPoint">
                     新增知识点
                 </el-button>
             </div>
         </div>
 
-        <!-- 知识点分类表格 -->
-        <el-table :data="categories" style="width: 100%; margin-bottom: 20px">
+        <el-table :data="points" style="width: 100%" v-loading="loading">
             <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="category_name" label="分类名称" />
-            <el-table-column prop="description" label="描述" />
-            <el-table-column label="操作" width="200">
-                <template #default="scope">
-                    <el-button type="warning" size="small" @click="handleEditCategory(scope.row)">
-                        编辑
-                    </el-button>
-                    <el-button type="danger" size="small" @click="handleDeleteCategory(scope.row)">
-                        删除
-                    </el-button>
-                </template>
-            </el-table-column>
-        </el-table>
-
-        <!-- 知识点表格 -->
-        <el-table :data="points" style="width: 100%">
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="category_name" label="所属分类" />
-            <el-table-column prop="point_name" label="知识点名称" />
+            <el-table-column prop="category_name" label="所属分类" width="120" />
+            <el-table-column prop="point_name" label="知识点名称" width="180" />
             <el-table-column prop="description" label="描述" show-overflow-tooltip />
-            <el-table-column label="操作" width="250">
+            <el-table-column label="操作" width="250" fixed="right">
                 <template #default="scope">
                     <el-button type="primary" size="small" @click="handleViewPoint(scope.row)">
                         查看
@@ -50,27 +54,19 @@
             </el-table-column>
         </el-table>
 
-        <!-- 分类对话框 -->
-        <el-dialog
-            v-model="categoryDialog.visible"
-            :title="categoryDialog.isEdit ? '编辑分类' : '新增分类'"
-            width="50%"
-        >
-            <el-form :model="categoryForm" :rules="categoryRules" ref="categoryFormRef" label-width="100px">
-                <el-form-item label="分类名称" prop="category_name">
-                    <el-input v-model="categoryForm.category_name" />
-                </el-form-item>
-                <el-form-item label="描述" prop="description">
-                    <el-input type="textarea" v-model="categoryForm.description" />
-                </el-form-item>
-            </el-form>
-            <template #footer>
-                <el-button @click="categoryDialog.visible = false">取消</el-button>
-                <el-button type="primary" @click="saveCategoryForm">确定</el-button>
-            </template>
-        </el-dialog>
+        <div class="pagination">
+            <el-pagination
+                v-model:current-page="currentPage"
+                v-model:page-size="pageSize"
+                :page-sizes="[10, 20, 50, 100]"
+                :total="total"
+                layout="total, sizes, prev, pager, next, jumper"
+                @size-change="handleSizeChange"
+                @current-change="handleCurrentChange"
+            />
+        </div>
 
-        <!-- 知识点对话框 -->
+        <!-- 知识点表单对话框 -->
         <el-dialog
             v-model="pointDialog.visible"
             :title="pointDialog.isEdit ? '编辑知识点' : '新增知识点'"
@@ -139,27 +135,25 @@
 import { ref, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import type { FormInstance, FormRules } from 'element-plus';
+import { Search } from '@element-plus/icons-vue';
 import {
     getKnowledgeCategories,
-    getKnowledgePoints,
-    addKnowledgeCategory,
-    updateKnowledgeCategory,
-    deleteKnowledgeCategory,
+    getKnowledgePointsPaginated,
     addKnowledgePoint,
     updateKnowledgePoint,
     deleteKnowledgePoint
 } from '@/api/index';
 
-// 数据定义
+const loading = ref(false);
 const categories = ref([]);
 const points = ref([]);
-const categoryFormRef = ref<FormInstance>();
-const pointFormRef = ref<FormInstance>();
+const total = ref(0);
+const currentPage = ref(1);
+const pageSize = ref(10);
 
-// 对话框状态
-const categoryDialog = ref({
-    visible: false,
-    isEdit: false
+const searchForm = ref({
+    category_id: null as number | null,
+    keyword: ''
 });
 
 const pointDialog = ref({
@@ -171,12 +165,8 @@ const viewDialog = ref({
     visible: false
 });
 
-// 表单数据
-const categoryForm = ref({
-    id: null,
-    category_name: '',
-    description: ''
-});
+const currentPoint = ref({});
+const pointFormRef = ref<FormInstance>();
 
 const pointForm = ref({
     id: null,
@@ -187,101 +177,65 @@ const pointForm = ref({
     explanation: ''
 });
 
-const currentPoint = ref({});
+const pointRules = ref<FormRules>({
+    category_id: [{ required: true, message: '请选择所属分类', trigger: 'change' }],
+    point_name: [{ required: true, message: '请输入知识点名称', trigger: 'blur' }],
+    description: [{ required: true, message: '请输入描述', trigger: 'blur' }],
+    example_sql: [{ required: true, message: '请输入SQL样例', trigger: 'blur' }]
+});
 
-// 表单验证规则
-const categoryRules: FormRules = {
-    category_name: [
-        { required: true, message: '请输入分类名称', trigger: 'blur' }
-    ]
-};
-
-const pointRules: FormRules = {
-    category_id: [
-        { required: true, message: '请选择所属分类', trigger: 'change' }
-    ],
-    point_name: [
-        { required: true, message: '请输入知识点名称', trigger: 'blur' }
-    ]
-};
-
-// 获取数据
+// 获取分类列表
 const fetchCategories = async () => {
     try {
         const res = await getKnowledgeCategories();
-        if (res.data.status === 'success') {  
-            categories.value = res.data.data;  
+        if (res.data.status === 'success') {
+            categories.value = res.data.data;
         }
     } catch (error) {
         ElMessage.error('获取分类列表失败');
     }
 };
 
+// 获取知识点列表
 const fetchPoints = async () => {
+    loading.value = true;
     try {
-        const res = await getKnowledgePoints();
-        if (res.data.status === 'success') {   
-            points.value = res.data.data;      
+        const res = await getKnowledgePointsPaginated({
+            page: currentPage.value,
+            pageSize: pageSize.value,
+            category_id: searchForm.value.category_id || undefined,
+            keyword: searchForm.value.keyword || undefined
+        });
+        if (res.data.status === 'success') {
+            points.value = res.data.data.items;
+            total.value = res.data.data.total;
         }
     } catch (error) {
         ElMessage.error('获取知识点列表失败');
+    } finally {
+        loading.value = false;
     }
 };
 
-// 分类操作
-const handleAddCategory = () => {
-    categoryDialog.value.isEdit = false;
-    categoryDialog.value.visible = true;
-    categoryForm.value = {
-        id: null,
-        category_name: '',
-        description: ''
-    };
+// 处理搜索
+const handleSearch = () => {
+    currentPage.value = 1;
+    fetchPoints();
 };
 
-const handleEditCategory = (row) => {
-    categoryDialog.value.isEdit = true;
-    categoryDialog.value.visible = true;
-    categoryForm.value = { ...row };
+// 处理分页大小变化
+const handleSizeChange = (val: number) => {
+    pageSize.value = val;
+    fetchPoints();
 };
 
-const handleDeleteCategory = async (row) => {
-    try {
-        await ElMessageBox.confirm('确定要删除该分类吗？', '提示', {
-            type: 'warning'
-        });
-        await deleteKnowledgeCategory(row.id);
-        ElMessage.success('删除成功');
-        fetchCategories();
-    } catch (error) {
-        if (error !== 'cancel') {
-            ElMessage.error('删除失败');
-        }
-    }
+// 处理页码变化
+const handleCurrentChange = (val: number) => {
+    currentPage.value = val;
+    fetchPoints();
 };
 
-const saveCategoryForm = async () => {
-    if (!categoryFormRef.value) return;
-    
-    await categoryFormRef.value.validate(async (valid) => {
-        if (valid) {
-            try {
-                if (categoryDialog.value.isEdit) {
-                    await updateKnowledgeCategory(categoryForm.value.id, categoryForm.value);
-                } else {
-                    await addKnowledgeCategory(categoryForm.value);
-                }
-                ElMessage.success(categoryDialog.value.isEdit ? '更新成功' : '添加成功');
-                categoryDialog.value.visible = false;
-                fetchCategories();
-            } catch (error) {
-                ElMessage.error(categoryDialog.value.isEdit ? '更新失败' : '添加失败');
-            }
-        }
-    });
-};
-
-// 知识点操作
+// 处理新增知识点
 const handleAddPoint = () => {
     pointDialog.value.isEdit = false;
     pointDialog.value.visible = true;
@@ -295,21 +249,26 @@ const handleAddPoint = () => {
     };
 };
 
+// 处理编辑知识点
 const handleEditPoint = (row) => {
     pointDialog.value.isEdit = true;
     pointDialog.value.visible = true;
     pointForm.value = { ...row };
 };
 
+// 处理查看知识点
 const handleViewPoint = (row) => {
     currentPoint.value = row;
     viewDialog.value.visible = true;
 };
 
+// 处理删除知识点
 const handleDeletePoint = async (row) => {
     try {
-        await ElMessageBox.confirm('确定要删除该知识点吗？', '提示', {
-            type: 'warning'
+        await ElMessageBox.confirm('确定要删除该知识点吗？', '警告', {
+            type: 'warning',
+            confirmButtonText: '确定',
+            cancelButtonText: '取消'
         });
         await deleteKnowledgePoint(row.id);
         ElMessage.success('删除成功');
@@ -321,6 +280,7 @@ const handleDeletePoint = async (row) => {
     }
 };
 
+// 保存知识点表单
 const savePointForm = async () => {
     if (!pointFormRef.value) return;
     
@@ -349,7 +309,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.knowledge-manage {
+.points-manage {
     padding: 20px;
 }
 
@@ -358,6 +318,17 @@ onMounted(() => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+}
+
+.search-area {
+    display: flex;
+    align-items: center;
+}
+
+.pagination {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
 }
 
 .view-content {
@@ -370,11 +341,11 @@ onMounted(() => {
 
 .view-item h4 {
     margin-bottom: 8px;
-    color: #606266;
+    color: #9b9da1;
 }
 
 .view-item pre {
-    background: #d2d4d6;
+    background: #aeafb0;
     padding: 12px;
     border-radius: 10px;
     margin: 0;
@@ -382,7 +353,7 @@ onMounted(() => {
     word-wrap: break-word;
 }
 
-.el-table {
+:deep(.el-table) {
     margin-bottom: 20px;
 }
-</style>
+</style> 

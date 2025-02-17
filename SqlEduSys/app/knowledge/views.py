@@ -3,14 +3,21 @@ from . import knowledge_bp
 from app.models.knowledges import KnowledgeCategory, KnowledgePoint
 from app import db
 from app.utils.response import ApiResponse
+from sqlalchemy import or_
 
 # 知识点分类相关接口
 @knowledge_bp.route('/categories', methods=['GET'])
 def get_categories():
-    """获取所有知识点分类"""
+    """获取所有知识点分类（包含知识点数量）"""
     try:
         categories = KnowledgeCategory.query.all()
-        return ApiResponse.success(data=[category.to_dict() for category in categories])
+        return ApiResponse.success(data=[
+            {
+                **category.to_dict(),
+                'point_count': category.points.count()
+            }
+            for category in categories
+        ])
     except Exception as e:
         current_app.logger.error(f"获取知识点分类失败: {str(e)}")
         return ApiResponse.error(message="获取知识点分类失败")
@@ -120,4 +127,60 @@ def delete_point(point_id):
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"删除知识点失败: {str(e)}")
-        return ApiResponse.error(message="删除知识点失败") 
+        return ApiResponse.error(message="删除知识点失败")
+
+@knowledge_bp.route('/points/page', methods=['GET'])
+def get_points_paginated():
+    """获取分页的知识点列表"""
+    try:
+        # 获取查询参数
+        page = request.args.get('page', 1, type=int)
+        page_size = request.args.get('pageSize', 10, type=int)
+        category_id = request.args.get('category_id', type=int)
+        keyword = request.args.get('keyword', '')
+
+        # 构建查询
+        query = KnowledgePoint.query.join(
+            KnowledgeCategory,
+            KnowledgePoint.category_id == KnowledgeCategory.id
+        )
+
+        # 应用过滤条件
+        if category_id:
+            query = query.filter(KnowledgePoint.category_id == category_id)
+        
+        if keyword:
+            query = query.filter(
+                or_(
+                    KnowledgePoint.point_name.ilike(f'%{keyword}%'),
+                    KnowledgePoint.description.ilike(f'%{keyword}%')
+                )
+            )
+
+        # 获取总数
+        total = query.count()
+
+        # 获取分页数据
+        points = query.order_by(KnowledgePoint.id.desc()).paginate(
+            page=page, 
+            per_page=page_size,
+            error_out=False
+        )
+
+        # 构建响应数据
+        result = {
+            'items': [
+                {
+                    **point.to_dict(),
+                    'category_name': point.category.category_name
+                }
+                for point in points.items
+            ],
+            'total': total
+        }
+
+        return ApiResponse.success(data=result)
+
+    except Exception as e:
+        current_app.logger.error(f"获取知识点列表失败: {str(e)}")
+        return ApiResponse.error(message="获取知识点列表失败") 
