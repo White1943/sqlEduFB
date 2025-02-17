@@ -7,15 +7,19 @@ class NLQueries(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     query_text = db.Column(db.Text, nullable=False)
     generated_sql = db.Column(db.Text)
-    involved_tables = db.Column(db.String(255))
-    schema_ids = db.Column(db.String(255))  # 存储关联的schema id
-    knowledge_point_id = db.Column(db.Integer, db.ForeignKey('knowledge_points.id'))
-    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
+    involved_tables = db.Column(db.Text, nullable=False)
+    schema_ids = db.Column(db.Text, nullable=False)
+    knowledge_point_id = db.Column(db.Integer, db.ForeignKey('knowledge_point.id'))
+    status = db.Column(db.Enum('pending', 'approved', 'rejected'), default='pending')
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
-    # 添加知识点关联
-    knowledge_point = db.relationship('KnowledgePoint', backref='queries')
+    # 修改关联关系定义
+    knowledge_point = db.relationship(
+        'KnowledgePoint',
+        backref=db.backref('queries', lazy='dynamic'),
+        foreign_keys=[knowledge_point_id]
+    )
 
     def to_dict(self):
         return {

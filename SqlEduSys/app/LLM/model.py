@@ -11,7 +11,7 @@ class LLMResponse:
         self.error = error
         self.timestamp = datetime.now()
 
-def get_llm_response(prompt: str):
+def get_llm_response(prompt: str) -> str:
     """
     调用大模型API获取响应
     
@@ -19,7 +19,7 @@ def get_llm_response(prompt: str):
         prompt: 输入的prompt文本
     
     Returns:
-        ApiResponse: 包含模型响应的标准化返回
+        str: 模型生成的响应文本，失败时返回None
     """
     try:
         # API配置
@@ -57,20 +57,15 @@ def get_llm_response(prompt: str):
         if 'choices' in result and len(result['choices']) > 0:
             response_text = result['choices'][0]['message']['content']
             # 记录成功的调用
-            log_llm_call(prompt, LLMResponse(response_text))
-            return ApiResponse.success(data=response_text)
+            log_llm_call(prompt, response_text)
+            return response_text
         else:
-            return ApiResponse.error(message="Invalid response format from LLM API")
+            current_app.logger.error("Invalid response format from LLM API")
+            return None
             
     except requests.exceptions.RequestException as e:
         current_app.logger.error(f"LLM API request failed: {str(e)}")
-        return ApiResponse.error(message=f"Failed to get response from LLM: {str(e)}", status_code=500)
-    except json.JSONDecodeError as e:
-        current_app.logger.error(f"Failed to parse LLM response: {str(e)}")
-        return ApiResponse.error(message="Invalid response format from LLM API", status_code=500)
-    except Exception as e:
-        current_app.logger.error(f"Unexpected error in LLM call: {str(e)}")
-        return ApiResponse.error(message=str(e), status_code=500)
+        return None
 
 def log_llm_call(prompt: str, response: LLMResponse) -> None:
     """

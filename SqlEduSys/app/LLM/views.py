@@ -7,7 +7,7 @@ from app.models.schema import Sqls
 from app.LLM.prompts import SCHEMA_TO_NL_PROMPT, NL_TO_SQL_PROMPT
 from app.LLM.model import get_llm_response
 from app.LLM import llm_bp
-
+from app.models.knowledges import KnowledgePoint,KnowledgeCategory
 sql_stu_bp = Blueprint('sql_stu', __name__)
 
 @sql_stu_bp.route('/generator', methods=['POST'])
@@ -46,36 +46,92 @@ def generate_nl_queries():
     try:
         data = request.get_json()
         schema_ids = data.get('schema_ids', [])
+        points = data.get('points', [])
         
-        if not schema_ids:
-            return ApiResponse.error(message="No schema IDs provided")
-
-        # 获取所有选中的schema
-        schemas = [Sqls.query.get_or_404(schema_id) for schema_id in schema_ids]
-        
-        # 生成查询描述
-        queries = generate_nl_queries_service(schemas)
-        if not queries:
-            return ApiResponse.error(message="Failed to generate queries")
+        if not schema_ids or not points:
+            return ApiResponse.error(message="请选择数据库模式和知识点")
             
-        # 保存到数据库
-        for query in queries:
-            nl_query = NLQueries(
-                query_text=query['query_text'],
-                involved_tables=query['involved_tables'],
-                schema_ids=','.join(map(str, schema_ids)),  # 存储所有相关的schema_ids
-                status='pending'
-            )
-            db.session.add(nl_query)
+        # 获取数据库表结构信息
+        schemas = Sqls.query.filter(Sqls.id.in_(schema_ids)).all()
+        if not schemas:
+            return ApiResponse.error(message="未找到选中的数据库模式")
+            
+        # 组合所有表的结构信息 - 修正这里使用正确的属性名
+        schema_info = "\n".join([schema.file_content for schema in schemas])  
+        generated_queries = []
+        for point in points:
+            point_id = point.get('id')
+            count = point.get('generateCount', 1)
+            
+            # 获取知识点详情
+            knowledge_point = KnowledgePoint.query.get(point_id)
+            if not knowledge_point:
+                continue
+                
+            # 使用知识点信息和示例生成查询
+            for _ in range(count):
+                try:
+                    # 构建提示词
+                    prompt = f"""
+                    基于以下数据库表结构：
+                    {schema_info}
+                    
+                    以及这个知识点的要求：
+                    知识点：{knowledge_point.point_name}
+                    描述：{knowledge_point.description}
+                    示例SQL：{knowledge_point.example_sql}
+                    解释：{knowledge_point.explanation}
+                    
+                    请生成一个新的自然语言查询描述。
+                    """
+                    
+                    # 调用 LLM 生成查询
+                    query_text = get_llm_response(prompt)
+                    if query_text:  # 检查是否成功获取响应
+                        # 创建新的查询记录
+                        new_query = NLQueries(
+                            query_text=query_text,
+                            involved_tables=",".join([schema.filename for schema in schemas]),
+                            schema_ids=",".join(map(str, schema_ids)),
+                            knowledge_point_id=point_id,
+                            status='pending'
+                        )
+                        db.session.add(new_query)
+                        generated_queries.append(new_query)
+                except Exception as e:
+                    current_app.logger.error(f"生成单条查询失败: {str(e)}")
+                    continue
         
-        db.session.commit()
-        return ApiResponse.success(message="Generated NL queries successfully")
-        
+        # 提交所有生成的查询
+        if generated_queries:
+            try:
+                db.session.commit()
+                return ApiResponse.success(
+                    data={
+                        'queries': [query.to_dict() for query in generated_queries]
+                    },
+                    message=f"成功生成 {len(generated_queries)} 条查询"
+                )
+            except Exception as e:
+                db.session.rollback()
+                return ApiResponse.error(message=f"保存查询失败: {str(e)}")
+        else:
+            return ApiResponse.error(message="未能生成任何查询")
+            
     except Exception as e:
-        db.session.rollback()
-        print(f"Error generating queries: {str(e)}")
+        current_app.logger.error(f"生成查询失败: {str(e)}")
         return ApiResponse.error(message=str(e))
 
+def extract_tables_from_schema(schemas, table_names):
+    """从schema中提取实际的表名"""
+    actual_tables = set()
+    for schema in schemas:
+        content = schema.file_content.lower()
+        for table in table_names:
+            table = table.strip().lower()
+            if f"create table `{table}`" in content or f"create table {table}" in content:
+                actual_tables.add(table)
+    return list(actual_tables)
 @llm_bp.route('/generate_sql', methods=['POST'])
 def generate_sql_endpoint():
     try:
@@ -134,22 +190,40 @@ def generate_sql_endpoint():
         return ApiResponse.error(message=str(e))
 
 # 获取查询列表
-@llm_bp.route('/nl_queries/<int:schema_id>', methods=['GET'])
-def get_nl_queries(schema_id):
+@llm_bp.route('/nl_queries', methods=['GET'])
+def get_nl_queries():
     try:
-        # 使用 FIND_IN_SET 或正则表达式来精确匹配逗号分隔的ID
-        queries = NLQueries.query.filter(
-            db.text(f"FIND_IN_SET('{schema_id}', schema_ids) > 0")
-        ).all()
+        # 获取查询参数
+        schema_ids = request.args.get('schema_ids', '').split(',')
+        page = request.args.get('page', 1, type=int)
+        page_size = request.args.get('page_size', 10, type=int)
         
-        # 或者使用正则表达式匹配
-        # pattern = f"(^{schema_id}$|^{schema_id},|,{schema_id}$|,{schema_id},)"
-        # queries = NLQueries.query.filter(
-        #     NLQueries.schema_ids.regexp(pattern)
-        # ).all()
+        if not schema_ids or schema_ids[0] == '':
+            return ApiResponse.success(data={'items': [], 'total': 0})
+            
+        # 构建查询条件
+        conditions = []
+        for schema_id in schema_ids:
+            conditions.append(db.text(f"FIND_IN_SET('{schema_id}', schema_ids) > 0"))
+            
+        # 构建查询
+        query = NLQueries.query.filter(db.or_(*conditions))
         
-        data = [query.to_dict() for query in queries]
-        return ApiResponse.success(data=data)
+        # 获取总数
+        total = query.count()
+        
+        # 分页
+        paginated = query.order_by(NLQueries.id.desc()).paginate(
+            page=page,
+            per_page=page_size,
+            error_out=False
+        )
+        
+        return ApiResponse.success(data={
+            'items': [item.to_dict() for item in paginated.items],
+            'total': total
+        })
+        
     except Exception as e:
-        print(f"Error fetching queries: {str(e)}")
+        current_app.logger.error(f"获取查询列表失败: {str(e)}")
         return ApiResponse.error(message=str(e))

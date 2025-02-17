@@ -51,7 +51,12 @@
 
         <!-- 已选知识点展示 -->
         <div class="selected-points" v-if="selectedPoints.length">
-            <h3>已选知识点：</h3>
+            <div class="selected-points-header">
+                <h3>已选知识点</h3>
+                <el-button type="danger" link @click="clearSelectedPoints">
+                    清空所有
+                </el-button>
+            </div>
             <el-row :gutter="20">
                 <el-col :span="8" v-for="point in selectedPoints" :key="point.id">
                     <el-card class="point-card">
@@ -63,6 +68,7 @@
                                     :min="1" 
                                     :max="10"
                                     size="small"
+                                    @change="updatePointCount(point)"
                                 />
                             </div>
                         </template>
@@ -70,7 +76,7 @@
                             <p>{{ point.description }}</p>
                             <el-button 
                                 type="danger" 
-                                link 
+                                link
                                 @click="removePoint(point)"
                             >
                                 移除
@@ -166,6 +172,7 @@
                     placeholder="选择分类"
                     clearable
                     @change="fetchDialogPoints"
+                    style="width: 200px; margin-right: 15px;"
                 >
                     <el-option
                         v-for="category in categories"
@@ -175,15 +182,34 @@
                     />
                 </el-select>
             </div>
+
+            <!-- 知识点列表表格 -->
             <el-table
                 :data="knowledgeDialog.points"
                 @selection-change="handleSelectionChange"
+                style="width: 100%"
             >
                 <el-table-column type="selection" width="55" />
-                <el-table-column prop="category_name" label="分类" />
-                <el-table-column prop="point_name" label="知识点" />
+                <el-table-column prop="point_name" label="知识点名称" />
                 <el-table-column prop="description" label="描述" show-overflow-tooltip />
+                <el-table-column label="生成数量" width="150">
+                    <template #default="{ row }">
+                        <el-input-number
+                            v-model="row.generateCount"
+                            :min="1"
+                            :max="10"
+                            size="small"
+                        />
+                    </template>
+                </el-table-column>
             </el-table>
+
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="knowledgeDialog.visible = false">取消</el-button>
+                    <el-button type="primary" @click="confirmSelection">确定</el-button>
+                </span>
+            </template>
         </el-dialog>
 
         <!-- SQL预览对话框 -->
@@ -200,14 +226,15 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElLoading } from 'element-plus';
 import { 
     generateNLQueries, 
     getNLQueries, 
     generateNLToSQL, 
     getSqlFiles,
     getKnowledgeCategories,
-    getKnowledgePointsPaginated 
+    getKnowledgePointsPaginated,
+    generateQueries
 } from '@/api/index';
 
 const queries = ref([]);
@@ -233,7 +260,7 @@ const knowledgeDialog = ref({
 
 // 计算是否可以生成查询
 const canGenerate = computed(() => {
-    return selectedSchemaIds.value.length > 0 || selectedPoints.value.length > 0;
+    return selectedSchemaIds.value.length > 0 && selectedPoints.value.length > 0;
 });
 
 // 获取所有schema
@@ -273,27 +300,31 @@ const fetchDialogPoints = async () => {
     try {
         const res = await getKnowledgePointsPaginated({
             page: 1,
-            pageSize: 1000,  // 暂时获取所有知识点
+            pageSize: 1000,
             category_id: knowledgeDialog.value.categoryId
         });
         if (res.data.status === 'success') {
-            knowledgeDialog.value.points = res.data.data.items;
+            // 为每个知识点添加生成数量字段
+            knowledgeDialog.value.points = res.data.data.items.map(point => ({
+                ...point,
+                generateCount: 1
+            }));
         }
     } catch (error) {
         ElMessage.error('获取知识点列表失败');
     }
 };
 
-// 处理知识点选择变化
-const handleSelectionChange = (selection) => {
+// 处理选择变化
+const handleSelectionChange = (selection: any[]) => {
     knowledgeDialog.value.selectedPoints = selection;
 };
 
-// 确认选择知识点
+// 确认选择
 const confirmSelection = () => {
     const newPoints = knowledgeDialog.value.selectedPoints.map(point => ({
         ...point,
-        generateCount: 1  // 默认生成1条
+        generateCount: point.generateCount || 1
     }));
     
     // 合并已选和新选的知识点，避免重复
@@ -304,9 +335,22 @@ const confirmSelection = () => {
     knowledgeDialog.value.visible = false;
 };
 
+// 更新知识点生成数量
+const updatePointCount = (point: any) => {
+    const index = selectedPoints.value.findIndex(p => p.id === point.id);
+    if (index !== -1) {
+        selectedPoints.value[index].generateCount = point.generateCount;
+    }
+};
+
 // 移除知识点
-const removePoint = (point) => {
+const removePoint = (point: any) => {
     selectedPoints.value = selectedPoints.value.filter(p => p.id !== point.id);
+};
+
+// 清空所有已选知识点
+const clearSelectedPoints = () => {
+    selectedPoints.value = [];
 };
 
 // 显示知识点选择对话框
@@ -316,27 +360,39 @@ const showKnowledgeDialog = async () => {
     await fetchDialogPoints();
 };
 
-// 生成查询
+// 处理生成查询
 const handleGenerateQueries = async () => {
-    if (!selectedSchemaIds.value.length && !selectedPoints.value.length) {
-        ElMessage.warning('请选择数据库模式或知识点');
+    if (!selectedSchemaIds.value.length || !selectedPoints.value.length) {
+        ElMessage.warning('请选择数据库模式和知识点');
         return;
     }
 
     try {
-        const response = await generateNLQueries({
+        const loading = ElLoading.service({
+            lock: true,
+            text: '正在生成查询...',
+            background: 'rgba(0, 0, 0, 0.7)'
+        });
+
+        const response = await generateQueries({
             schema_ids: selectedSchemaIds.value,
-            knowledge_points: selectedPoints.value.map(point => ({
+            points: selectedPoints.value.map(point => ({
                 id: point.id,
-                count: point.generateCount
+                generateCount: point.generateCount || 1
             }))
         });
-        
+
+        loading.close();
+
         if (response.data.status === 'success') {
-            ElMessage.success('生成查询成功');
-            fetchQueries();
+            ElMessage.success(response.data.message);
+            fetchQueries(); // 刷新查询列表
+            clearSelectedPoints(); // 清空已选知识点
+        } else {
+            ElMessage.error(response.data.message);
         }
     } catch (error) {
+        console.error('生成查询失败:', error);
         ElMessage.error('生成查询失败');
     }
 };
@@ -395,23 +451,24 @@ const handleCurrentChange = (val: number) => {
 const fetchQueries = async () => {
     if (!selectedSchemaIds.value.length) {
         queries.value = [];
+        total.value = 0;
         return;
     }
     
     try {
-        const allQueries = [];
-        for (const schemaId of selectedSchemaIds.value) {
-            const response = await getNLQueries(schemaId, {
-                page: currentPage.value,
-                pageSize: pageSize.value
-            });
-            if (response.data.status === 'success') {
-                allQueries.push(...response.data.data.items);
-                total.value = response.data.data.total;
-            }
+        // 直接传递选中的schema_ids数组
+        const response = await getNLQueries({
+            schema_ids: selectedSchemaIds.value,  // 不需要join，直接传递数组
+            page: currentPage.value,
+            page_size: pageSize.value
+        });
+        
+        if (response.data.status === 'success') {
+            queries.value = response.data.data.items;
+            total.value = response.data.data.total;
         }
-        queries.value = allQueries;
     } catch (error) {
+        console.error('获取查询列表失败:', error);
         ElMessage.error('获取查询列表失败');
     }
 };
@@ -471,5 +528,16 @@ watch(selectedSchemaIds, (newVal) => {
 pre {
     white-space: pre-wrap;
     word-wrap: break-word;
+}
+.selected-points-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
 }
 </style>

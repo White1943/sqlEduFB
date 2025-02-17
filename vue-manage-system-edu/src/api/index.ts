@@ -104,20 +104,40 @@ export const updateSqlFile = (sqlId: number, data: { filename?: string; file_con
     });
 };
 
-// 生成自然语言查询
-export const generateNLQueries = (schemaIds: number[]) => {
+// // 生成自然语言查询
+// export const generateNLQueries = (schemaIds: number[]) => {
+//     return request({
+//         url: `/llm/generate_nl_queries`,
+//         method: 'post',
+//         data: { schema_ids: schemaIds }
+//     });
+// };
+export const generateQueries = (data: {
+    schema_ids: number[];
+    points: Array<{
+        id: number;
+        generateCount: number;
+    }>;
+}) => {
     return request({
         url: `/llm/generate_nl_queries`,
         method: 'post',
-        data: { schema_ids: schemaIds }
+        data
     });
 };
-
 // 获取查询列表
-export const getNLQueries = (schemaId: number) => {
+export const getNLQueries = (params: {
+    schema_ids: number[];
+    page: number;
+    page_size: number;
+}) => {
     return request({
-        url: `/llm/nl_queries/${schemaId}`,
-        method: 'get'
+        url: '/llm/nl_queries',
+        method: 'get',
+        params: {
+            ...params,
+            schema_ids: params.schema_ids.join(',')
+        }
     });
 };
 

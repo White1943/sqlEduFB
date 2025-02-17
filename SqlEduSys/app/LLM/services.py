@@ -160,92 +160,63 @@ def validate_sql(query_description: str, generated_sql: str):
         print(f"Error validating SQL: {e}")
         return None
 
-def generate_nl_queries_service(schemas):
+def generate_nl_queries_service(schemas, knowledge_points):
     """
     生成自然语言查询的服务函数
     
     Args:
         schemas: 列表，每个元素包含 id, filename 和 file_content
+        knowledge_points: 列表，每个元素包含 id, point_name, description, example_sql 和 count
     """
-    # 构建schema内容，包含表ID信息
-    schema_content = ""
-    schema_map = {}  # 用于存储表名到ID的映射
-    
-    for schema in schemas:
-        schema_content += f"\n-- Schema ID: {schema.id}\n"
-        schema_content += f"-- Filename: {schema.filename}\n"
-        schema_content += f"{schema.file_content}\n"
-        
-        # 解析CREATE TABLE语句，提取表名
-        for line in schema.file_content.split('\n'):
-            if line.strip().upper().startswith('CREATE TABLE'):
-                table_name = line.split('`')[-2] if '`' in line else line.split()[-1].strip('(')
-                schema_map[table_name.lower()] = schema.id
-
-    system_message = {
-        'role': 'system',
-        'content': f"""
-        你是一个SQL查询描述生成助手。根据给定的数据库Schema生成10个不同的查询描述。
-        数据库Schema如下：
-        {schema_content}
-        
-        请生成10个不同的查询描述，每个查询都要标注涉及的表名。
-        格式要求：@[表名1(ID),表名2(ID)] 查询描述
-        
-        示例：
-        @[users(1),orders(1)] 查找2023年下单次数超过5次的用户信息
-        @[products(2)] 统计所有价格超过1000元的产品
-        
-        注意：
-         1. 每个查询都以@开头
-        2. 包含[涉及表：table1,table2]格式的表名
-        3. 查询描述要具体且符合业务场景
-        4. 包含不同难度的查询
-        5. 确保表名完整且包含对应的Schema ID
-        6. 不要有额外的文字说明
-
-
-        """
-    }
-
     try:
-        start_time = time.time()
-        completion = client.chat.completions.create(
-            model="qwen-plus",
-            messages=[{'role': 'system', 'content': system_message['content']}]
-        )
-        end_time = time.time()
-        print(f"生成查询描述耗时: {end_time - start_time}秒")
-
-        output_data = completion.model_dump()
-        result = output_data["choices"][0]["message"]["content"]
-        print("生成的查询描述:", result)
-
-        # 处理返回结果，确保正确解析表名和ID
-        queries = []
-        for query in result.split('\n'):
-            if '@[' in query and ']' in query:
-                tables_part = query[query.find('[') + 1:query.find(']')]
-                description = query[query.find(']') + 1:].strip()
-                
-                # 解析表名和ID
-                tables_info = []
-                table_ids = []
-                for table_ref in tables_part.split(','):
-                    table_ref = table_ref.strip()
-                    if '(' in table_ref and ')' in table_ref:
-                        table_name = table_ref[:table_ref.find('(')].strip()
-                        table_id = table_ref[table_ref.find('(') + 1:table_ref.find(')')].strip()
-                        tables_info.append(f"{table_name}")
-                        table_ids.append(table_id)
-                
-                queries.append({
-                    'query_text': description,
-                    'involved_tables': ','.join(tables_info),
-                    'involved_table_ids': ','.join(table_ids)
-                })
+        # 构建schema内容
+        schema_content = ""
+        for schema in schemas:
+            schema_content += f"\n-- Schema ID: {schema.id}\n"
+            schema_content += f"-- Filename: {schema.filename}\n"
+            schema_content += f"{schema.file_content}\n"
         
-        return queries
+        all_queries = []
+        
+        # 为每个知识点生成查询
+        for point in knowledge_points:
+            # 构建prompt
+            prompt = SCHEMA_TO_NL_PROMPT.format(
+                schema_content=schema_content,
+                point_name=point['point_name'],
+                point_description=point['description'],
+                example_sql=point['example_sql'],
+                count=point['count']
+            )
+
+            # 调用千问模型生成查询
+            start_time = time.time()
+            completion = client.chat.completions.create(
+                model="qwen-plus",
+                messages=[{'role': 'system', 'content': prompt}]
+            )
+            print(f"生成查询耗时: {time.time() - start_time}秒")
+
+            # 解析返回结果
+            result = completion.choices[0].message.content
+            queries = []
+            
+            # 处理生成的查询
+            for query in result.split('\n'):
+                if query.startswith('@[') and ']' in query:
+                    tables = query[2:query.find(']')].split(',')
+                    description = query[query.find(']')+1:].strip()
+                    
+                    queries.append({
+                        'query_text': description,
+                        'involved_tables': ','.join(tables),
+                        'schema_ids': ','.join(str(s.id) for s in schemas),
+                        'knowledge_point_id': point['id']
+                    })
+            
+            all_queries.extend(queries)
+        
+        return all_queries
 
     except Exception as e:
         print(f"生成查询描述错误: {str(e)}")
