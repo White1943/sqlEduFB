@@ -131,7 +131,20 @@ export const generateQueries = (data: {
         }
     });
 };
-// 获取查询列表
+export const updateNLQuery = (data: any) => {
+    return request({
+        url: '/llm/nl_queries/update',
+        method: 'put',
+        data
+    });
+};
+ 
+export const deleteNLQuery = (id: number) => {
+    return request({
+        url: `/llm/nl_queries/${id}`,
+        method: 'delete'
+    });
+};
 export const getNLQueries = (params: {
     schema_ids: number[];
     page: number;

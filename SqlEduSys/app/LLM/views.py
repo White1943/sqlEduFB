@@ -236,3 +236,32 @@ def get_nl_queries():
     except Exception as e:
         current_app.logger.error(f"获取查询列表失败: {str(e)}")
         return ApiResponse.error(message=str(e))
+@llm_bp.route('/nl_queries/<int:query_id>', methods=['DELETE'])
+def delete_nl_query(query_id):
+    try:
+        query = NLQueries.query.get_or_404(query_id)
+        db.session.delete(query)
+        db.session.commit()
+        return ApiResponse.success(message="查询已删除")
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"删除查询失败: {str(e)}")
+        return ApiResponse.error(message=str(e))
+
+@llm_bp.route('/nl_queries/update', methods=['PUT'])
+def update_nl_query():
+    try:
+        data = request.get_json()
+        query_id = data.get('id')
+        query = NLQueries.query.get_or_404(query_id)
+        
+        # 更新字段
+        query.query_text = data.get('query_text', query.query_text)
+        query.involved_tables = data.get('involved_tables', query.involved_tables)
+        
+        db.session.commit()
+        return ApiResponse.success(message="查询已更新")
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"更新查询失败: {str(e)}")
+        return ApiResponse.error(message=str(e))

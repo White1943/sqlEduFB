@@ -66,7 +66,7 @@
                                 <el-input-number 
                                     v-model="point.generateCount" 
                                     :min="1" 
-                                    :max="10"
+                                    :max="20"
                                     size="small"
                                     @change="updatePointCount(point)"
                                 />
@@ -146,7 +146,32 @@
                 </template>
             </el-table-column>
         </el-table>
-
+        <el-dialog
+            v-model="editDialogVisible"
+            title="编辑查询"
+            width="50%"
+        >
+            <el-form :model="editForm" label-width="120px">
+                <el-form-item label="查询描述">
+                    <el-input
+                        v-model="editForm.query_text"
+                        type="textarea"
+                        rows="4"
+                    />
+                </el-form-item>
+                <el-form-item label="涉及的表">
+                    <el-input v-model="editForm.involved_tables" />
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="editDialogVisible = false">取消</el-button>
+                    <el-button type="primary" @click="confirmEdit">
+                        确认
+                    </el-button>
+                </span>
+            </template>
+        </el-dialog>
         <!-- 分页器 -->
         <div class="pagination">
             <el-pagination
@@ -225,16 +250,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
-import { ElMessage, ElLoading } from 'element-plus';
+import { ref, computed, onMounted, watch,reactive } from 'vue';
+import { ElMessage, ElLoading, ElMessageBox } from 'element-plus';
 import { 
-    generateNLQueries, 
+    
     getNLQueries, 
     generateNLToSQL, 
     getSqlFiles,
     getKnowledgeCategories,
     getKnowledgePointsPaginated,
-    generateQueries
+    generateQueries,
+    updateNLQuery,
+    deleteNLQuery
 } from '@/api/index';
 
 const queries = ref([]);
@@ -250,14 +277,21 @@ const pageSize = ref(10);
 const total = ref(0);
 const selectedPoints = ref([]);
 const categories = ref([]);
-
+const editDialogVisible = ref(false);
 const knowledgeDialog = ref({
     visible: false,
     categoryId: null,
     points: [],
     selectedPoints: []
 });
-
+ 
+const editForm = reactive({
+    id: 0,
+    query_text: '',
+    involved_tables: '',
+    schema_ids: '',
+    knowledge_point_id: 0
+});
 // 计算是否可以生成查询
 const canGenerate = computed(() => {
     return selectedSchemaIds.value.length > 0 && selectedPoints.value.length > 0;
@@ -398,7 +432,58 @@ const handleGenerateQueries = async () => {
         ElMessage.error(error.response?.data?.message || '生成查询失败');
     }
 };
+const handleEdit = (row: any) => {
+    editForm.id = row.id;
+    editForm.query_text = row.query_text;
+    editForm.involved_tables = row.involved_tables;
+    editForm.schema_ids = row.schema_ids;
+    editForm.knowledge_point_id = row.knowledge_point_id;
+    editDialogVisible.value = true;
+};
 
+const confirmEdit = async () => {
+    try {
+        const response = await updateNLQuery(editForm);
+        if (response.data.status === 'success') {
+            ElMessage.success('更新成功');
+            editDialogVisible.value = false;
+            // 刷新查询列表
+            fetchQueries();
+        } else {
+            ElMessage.error('更新失败');
+        }
+    } catch (error) {
+        ElMessage.error('更新失败');
+    }
+};
+const handleDelete = (row: any) => {
+    ElMessageBox.confirm(
+        '确定要删除这条查询吗？',
+        '警告',
+        {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning',
+        }
+    )
+        .then(async () => {
+            try {
+                const response = await deleteNLQuery(row.id);
+                if (response.data.status === 'success') {
+                    ElMessage.success('删除成功');
+                    // 刷新查询列表
+                    fetchQueries();
+                } else {
+                    ElMessage.error('删除失败');
+                }
+            } catch (error) {
+                ElMessage.error('删除失败');
+            }
+        })
+        .catch(() => {
+            ElMessage.info('已取消删除');
+        });
+};
 // 查看SQL
 const handleViewSQL = (row) => {
     dialogType.value = 'sql';
