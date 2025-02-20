@@ -32,7 +32,8 @@ def create_app(config_class=Config):
 
     from .schema import schema_bp
     app.register_blueprint(schema_bp, url_prefix='/schema')
-
+    from .LLM import sql_stu_bp
+    app.register_blueprint(sql_stu_bp, url_prefix='/stu')
     from .LLM import llm_bp
     app.register_blueprint(llm_bp, url_prefix='/llm')
     from app.chat.views import chat_bp

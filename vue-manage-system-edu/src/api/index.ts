@@ -39,14 +39,14 @@ export const registerUser = (data: { username: string; email: string; password: 
 };
 export const generateSQL = (query: string) => {
     return request({
-        url: '/sql/generator',  // 后端接口
+        url: '/stu/generator',  // 后端接口
         method: 'post',
         data: { query }   
     });
 };
 export const validateSQL = (data: { query_description: string; generated_sql: string }) => {
     return request({
-        url: '/sql/validator',  // 后端接口
+        url: '/stu/validator',  // 后端接口
         method: 'post',
         data: { data }   
     });

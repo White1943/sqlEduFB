@@ -8,7 +8,7 @@ from app.LLM.prompts import SCHEMA_TO_NL_PROMPT, NL_TO_SQL_PROMPT
 from app.LLM.model import get_llm_response
 from app.LLM import llm_bp
 from app.models.knowledges import KnowledgePoint,KnowledgeCategory
-sql_stu_bp = Blueprint('sql_stu', __name__)
+from app.LLM import sql_stu_bp
 
 @sql_stu_bp.route('/generator', methods=['POST'])
 def generate():
