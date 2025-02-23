@@ -65,7 +65,8 @@
 
         <div class="usage-tip">
             <el-alert 
-                title="提示：选择知识点和知识点大类只能选择其中一个，请先确认选择方式。选择后需要清空当前选择才能切换到另一种选择方式。" 
+                title="提示：选择知识点和知识点大类只能选择其中一个，请先确认选择方式。选择后需要清空当前选择才能切换到另一种选择方式。
+                知识点大类对应的数量是，该大类下每个知识点生成的数量" 
                 type="info" 
                 :closable="false"
             />
@@ -313,7 +314,8 @@ import {
     getKnowledgePointsPaginated,
     generateQueries,
     updateNLQuery,
-    deleteNLQuery
+    deleteNLQuery,
+    getKnowledgePointsByCategory
 } from '@/api/index';
 
 // 基础数据
@@ -343,10 +345,10 @@ const knowledgeDialog = ref({
     selectedPoints: []
 });
 
-// 知识点大类对话框
+// 知识点大类对话框状态
 const categoryDialog = reactive({
     visible: false,
-    categories: [],
+    categories: [], // 存储知识点大类数据
     selectedCategories: []
 });
 
@@ -597,32 +599,35 @@ const handleGenerateQueries = async () => {
 
         // 如果选择了知识点大类，则将该大类下的所有知识点信息添加到请求数据中
         if (selectedCategories.value.length) {
-            const categoryData = {
-                schema_ids: selectedSchemaIds.value,
-                categories: selectedCategories.value.map(category => ({
-                    id: category.id,
-                    generateCount: parseInt(category.generateCount) || 1
-                }))
-            };
-            
-            const response = await generateQueries(categoryData);
-            loading.close();
-
-            if (response.data.status === 'success') {
-                ElMessage.success(response.data.message);
-                await fetchQueries(); // 等待查询列表刷新完成
-                clearSelected(); // 清空已选知识点和大类
+            for (const category of selectedCategories.value) {
+                try {
+                    const response = await getKnowledgePointsByCategory(category.id);
+                    console.log('API Response:', response); // 用于调试
+                    
+                    // 确保我们访问的是 response.data.data，这是后端 ApiResponse.success(data=points_data) 返回的结构
+                    const categoryPoints = response.data.data;
+                    
+                    // 将该分类下所有知识点的 ID 和生成数量添加到请求数据中
+                    requestData.points.push(...categoryPoints.map(point => ({
+                        id: point.id,
+                        generateCount: category.generateCount // 使用分类的生成数量
+                    })));
+                } catch (error) {
+                    console.error('获取知识点失败:', error);
+                    ElMessage.error('获取知识点失败，请重试');
+                }
             }
+        }
+
+        const response = await generateQueries(requestData);
+        loading.close();
+
+        if (response.data.status === 'success') {
+            ElMessage.success(response.data.message);
+            await fetchQueries(); // 等待查询列表刷新完成
+            clearSelected(); // 清空已选知识点和大类
         } else {
-            // 如果是选择的知识点，使用原来的逻辑
-            const response = await generateQueries(requestData);
-            loading.close();
-
-            if (response.data.status === 'success') {
-                ElMessage.success(response.data.message);
-                await fetchQueries(); // 等待查询列表刷新完成
-                clearSelected(); // 清空已选知识点
-            }
+            ElMessage.error(response.data.message || '生成查询失败');
         }
     } catch (error: any) {
         loading?.close();

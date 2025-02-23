@@ -184,3 +184,18 @@ def get_points_paginated():
     except Exception as e:
         current_app.logger.error(f"获取知识点列表失败: {str(e)}")
         return ApiResponse.error(message="获取知识点列表失败") 
+    
+@knowledge_bp.route('/points/category/<int:category_id>', methods=['GET'])
+def get_knowledge_points_by_category(category_id):
+    """根据知识点大类ID获取知识点列表"""
+    try:
+        # 查询该分类下的所有知识点
+        points = KnowledgePoint.query.filter_by(category_id=category_id).all()
+        
+        # 将知识点转换为字典格式
+        points_data = [point.to_dict() for point in points]
+        print(points_data)
+        
+        return ApiResponse.success(data=points_data, message="获取知识点成功")
+    except Exception as e:
+        return ApiResponse.error(message=f"获取知识点失败: {str(e)}")

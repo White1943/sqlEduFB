@@ -262,7 +262,12 @@ export const deleteKnowledgeCategory = (id: number) => {
         method: 'delete'
     });
 };
-
+export const getKnowledgePointsByCategory = (categoryId: number) => {
+    return request({
+        url: `/knowledge/points/category/${categoryId}`,
+        method: 'get'
+    });
+};
 
 
 export const getKnowledgePoints = () => {
