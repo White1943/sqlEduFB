@@ -46,8 +46,9 @@ def generate_nl_queries():
     try:
         data = request.get_json()
         schema_ids = data.get('schema_ids', [])
+        print(data)
         points = data.get('points', [])
-        
+        print("points:", points)
         if not schema_ids or not points:
             return ApiResponse.error(message="请选择数据库模式和知识点")
             
@@ -72,7 +73,7 @@ def generate_nl_queries():
             # 使用知识点信息和示例生成查询
             for _ in range(count):
                 try:
-                    # 构建提示词
+
                     prompt = f"""
                     基于以下数据库表结构：
                     {schema_info}
@@ -87,11 +88,13 @@ def generate_nl_queries():
                     @[表名1,表名2] 查询描述
                     """
                     
-                    # 调用 LLM 生成查询
+
                     query_text = get_llm_response(prompt)
-                    if query_text:  # 检查是否成功获取响应
-                        # 解析查询文本
+                    if query_text:
+
+                        # 检查是否成功获取响应
                         if query_text.startswith('@[') and ']' in query_text:
+
                             tables = query_text[2:query_text.find(']')].split(',')
                             description = query_text[query_text.find(']')+1:].strip()
                             

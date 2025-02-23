@@ -41,4 +41,7 @@ def create_app(config_class=Config):
     from .knowledge import knowledge_bp
     app.register_blueprint(knowledge_bp, url_prefix='/knowledge')
     return app
+
+
+
 # app\__init__.py

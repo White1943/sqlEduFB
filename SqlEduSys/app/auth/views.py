@@ -3,7 +3,7 @@ from flask_login import login_required
 from sqlalchemy.sql.functions import current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from app import db
-from . import auth_bp
+from app.auth import auth_bp
 # from . import auth
 from app.utils.response import ApiResponse
 
@@ -16,6 +16,7 @@ def login():
     username = data.get('username')
     password = data.get('password')
     user = User.query.filter_by(username=username).first()
+    print("登录中")
     if user and check_password_hash(user.password_hash, password):
 
         return ApiResponse.success(data={"username": username, "is_admin":user.is_admin }, message="Login successful")
