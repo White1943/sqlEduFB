@@ -311,7 +311,14 @@ export const deleteKnowledgePoint = (id: number) => {
         method: 'delete'
     });
 };
+export const getStatistics = () => {
+    return request({
+        url: '/statistics/statistics',
+        method: 'get'
+    });
+};
  
+
 
 
 //额，这个是src/api/index.ts,在这里进行接口管理，方便复用，以前每个页面都写请求函数，是有点重用率低

@@ -604,7 +604,7 @@ const handleGenerateQueries = async () => {
                     const response = await getKnowledgePointsByCategory(category.id);
                     console.log('API Response:', response); // 用于调试
                     
-                    // 确保我们访问的是 response.data.data，这是后端 ApiResponse.success(data=points_data) 返回的结构
+                    // response.data.data，这是后端 ApiResponse.success(data=points_data) 返回的结构
                     const categoryPoints = response.data.data;
                     
                     // 将该分类下所有知识点的 ID 和生成数量添加到请求数据中

@@ -31,34 +31,7 @@ export const menuData: Menus[] = [
             },
         ]
     },
-    {
-        id: '1',
-        title: '系统管理',
-        index: '1',
-        icon: 'HomeFilled',
-        children: [
-         
-                {
-                    id: '11',
-                    pid: '1',
-                    index: '/system-user',
-                    title: '用户管理',
-                },
-                {
-                    id: '12',
-                    pid: '1',
-                    index: '/system-role',
-                    title: '角色管理',
-                },
-                {
-                    id: '13',
-                    pid: '1',
-                    index: '/system-menu',
-                    title: '菜单管理',
-                },
-           
-        ],
-    },
+  
     {
         id:'9',
         title:'数据库管理',
@@ -79,26 +52,7 @@ export const menuData: Menus[] = [
             },
         ]
     },
-    {
-        id:'10',
-        title:'实验作业管理',
-        index:'10',
-        icon:'edit',
-        children:[
-            {
-                id: '101',
-                pid: '10',
-                index: '/gen-experiment',
-                title: '查看表结构',
-            },
-            {
-                id: '102',
-                pid: '10',
-                index: '/system-experiment',
-                title: '表模式导入',
-            },
-        ]
-    },
+
     {
         id:'153',
         title:'知识点',
@@ -137,6 +91,42 @@ export const menuData: Menus[] = [
          
         ]
     },
+    {
+        id:'10',
+        title:'实验作业管理',
+        index:'10',
+        icon:'edit',
+        children:[
+            {
+                id: '101',
+                pid: '10',
+                index: '/gen-experiment',
+                title: '生成实验作业',
+            },
+            {
+                id: '102',
+                pid: '10',
+                index: '/system-experiment',
+                title: '实验作业管理',
+            },
+        ]
+    },
+    {
+        id:'154',
+        title:'统计与查看',
+        index:'/statistics-view',
+        icon:'sort',
+        children:[
+            {
+                id:'1541',
+                pid:'154',
+                index:'/statistics-view',
+                title:'统计与查看'
+            },
+ 
+        ]
+    },
+   
      
     {
         id: '16',
@@ -152,7 +142,34 @@ export const menuData: Menus[] = [
             }
         ]
     },
-
+    {
+        id: '1',
+        title: '系统管理',
+        index: '1',
+        icon: 'HomeFilled',
+        children: [
+         
+                {
+                    id: '11',
+                    pid: '1',
+                    index: '/system-user',
+                    title: '用户管理',
+                },
+                {
+                    id: '12',
+                    pid: '1',
+                    index: '/system-role',
+                    title: '角色管理',
+                },
+                {
+                    id: '13',
+                    pid: '1',
+                    index: '/system-menu',
+                    title: '菜单管理',
+                },
+           
+        ],
+    },
     {
         id: '2',
         title: '组件',

@@ -40,6 +40,8 @@ def create_app(config_class=Config):
     app.register_blueprint(chat_bp, url_prefix='/chat')
     from .knowledge import knowledge_bp
     app.register_blueprint(knowledge_bp, url_prefix='/knowledge')
+    from .statistics import statistics_bp
+    app.register_blueprint(statistics_bp, url_prefix='/statistics')
     return app
 
 

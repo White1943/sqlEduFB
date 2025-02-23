@@ -274,6 +274,7 @@ const routes: RouteRecordRaw[] = [
                 },
                 component: () => import('../views/pages/knowledgePoints.vue')
             }   ,
+
  //弃用
             // {
             //     path: '/knowledge-manage',
@@ -284,7 +285,15 @@ const routes: RouteRecordRaw[] = [
             //     },
             //     component: () => import( '../views/pages/knowledgeManage.vue'),
             // },
-            
+            {
+                path: '/statistics-view',
+                name: 'statisticsView',
+                meta: {
+                    title: '统计与查看',
+                    permiss: '154',
+                },
+                component: () => import( '../views/pages/statisticsView.vue'),
+            },
             {
                 path: '/nl-queries',
                 name: 'nlQueries',
