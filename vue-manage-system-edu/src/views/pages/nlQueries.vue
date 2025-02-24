@@ -32,7 +32,15 @@
                         </el-option>
                     </el-select>
                 </div>
-                
+                               <!-- 知识点大类选择按钮 -->
+               <el-button 
+                    type="primary" 
+                    @click="showCategoryDialog"
+                    style="margin-right: 15px;"
+                    :disabled="isCategoryDialogDisabled"
+                >
+                    选择知识点大类
+                </el-button>
                 <!-- 知识点选择按钮 -->
                 <el-button 
                     type="primary" 
@@ -43,15 +51,7 @@
                     选择知识点
                 </el-button>
 
-                <!-- 知识点大类选择按钮 -->
-                <el-button 
-                    type="primary" 
-                    @click="showCategoryDialog"
-                    style="margin-right: 15px;"
-                    :disabled="isCategoryDialogDisabled"
-                >
-                    选择知识点大类
-                </el-button>
+ 
 
                 <el-button 
                     type="primary" 

@@ -57,8 +57,8 @@ export const menuData: Menus[] = [
         id:'153',
         title:'知识点',
         index:'/knowledge-manage',
-        icon:'sort',
-    
+        icon:'Notebook',
+       
         children:[
             {
                 id: '1531',
@@ -115,7 +115,7 @@ export const menuData: Menus[] = [
         id:'154',
         title:'统计与查看',
         index:'/statistics-view',
-        icon:'sort',
+        icon:'Histogram',
         children:[
             {
                 id:'1541',

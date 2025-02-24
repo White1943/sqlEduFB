@@ -9,6 +9,7 @@ const routes: RouteRecordRaw[] = [
         path: '/',
         redirect: '/dashboard',
     },
+ 
     {
         path: '/',
         name: 'Home',

@@ -317,7 +317,20 @@ export const getStatistics = () => {
         method: 'get'
     });
 };
- 
+export const getQueriesByDate = (date: string) => {
+    return request({
+        url: `/statistics/queries/${date}`,
+        method: 'get'
+    });
+};
+
+export const getCategoriesStatistics = () => {
+    return request({
+        url: '/statistics/categories',  // 假设后端有这个接口
+        method: 'get'
+    });
+};
+
 
 
 

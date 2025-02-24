@@ -21,6 +21,11 @@
 
         <el-divider></el-divider>
 
+        <h3>自然语言查询所属大类数量</h3>
+        <div id="pie-chart" style="height: 400px; width: 100%;"></div>
+
+        <el-divider></el-divider>
+
         <h3>每日生成的自然语言描述</h3>
         <el-table :data="dailyQueries" style="width: 100%">
             <el-table-column prop="date" label="日期" />
@@ -31,25 +36,40 @@
                 </template>
             </el-table-column>
         </el-table>
+
+        <!-- 查询语句对话框 -->
+        <el-dialog v-model="dialogVisible" title="查询语句" width="50%">
+            <pre>{{ currentQueries }}</pre>
+            <template #footer>
+                <el-button @click="dialogVisible = false">关闭</el-button>
+            </template>
+        </el-dialog>
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue';
 import { ElMessage } from 'element-plus';
-import { getStatistics } from '@/api/index';
+import { getStatistics, getQueriesByDate, getCategoriesStatistics } from '@/api/index';
 import * as echarts from 'echarts';
 
-// 使用 ref 获取 DOM 元素
 const chart = ref<HTMLElement | null>(null);
-
 const statistics = ref({
     total_nl_queries: 0,
     total_generated_sql: 0,
     daily_nl_queries: {}
 });
-
 const dailyQueries = ref([]);
+const dialogVisible = ref(false); // 控制对话框的可见性
+const currentQueries = ref(''); // 存储当前查询语句
+
+interface CategoryStatistic {
+    id: number;
+    name: string;
+    count: number;
+}
+
+const categoriesStatistics = ref<CategoryStatistic[]>([]);
 
 const fetchStatistics = async () => {
     try {
@@ -68,8 +88,22 @@ const fetchStatistics = async () => {
     }
 };
 
+const fetchCategoriesStatistics = async () => {
+    try {
+        const response = await getCategoriesStatistics();
+        if (response.data.status === 'success') {
+            categoriesStatistics.value = response.data.data;
+            renderPieChart();
+        } else {
+            ElMessage.error('获取大类统计信息失败');
+        }
+    } catch (error) {
+        console.error('获取大类统计信息失败:', error);
+        ElMessage.error('获取大类统计信息失败');
+    }
+};
+
 const renderChart = () => {
-    // 使用 Vue 的 ref 获取 DOM 元素
     if (!chart.value) {
         console.error('Chart DOM element not found');
         return;
@@ -99,12 +133,75 @@ const renderChart = () => {
     myChart.setOption(option);
 };
 
-const viewDailyQueries = (date) => {
-    console.log(`查看 ${date} 的生成查询语句`);
+const renderPieChart = () => {
+    const pieChartElement = document.getElementById('pie-chart');
+    if (!pieChartElement) return;
+
+    const myPieChart = echarts.init(pieChartElement);
+    
+    // 修改数据处理逻辑，使用类别名称
+    const data = categoriesStatistics.value.map(category => ({
+        name: category.name,  // 使用类别名称
+        value: category.count
+    }));
+
+    const option = {
+        title: {
+            text: '自然语言查询所属大类数量',
+            subtext: '饼状图展示',
+            left: 'center'
+        },
+        tooltip: {
+            trigger: 'item',
+            formatter: '{a} <br/>{b}: {c} ({d}%)'  // 显示百分比
+        },
+        legend: {
+            orient: 'vertical',
+            left: 'left',
+            data: data.map(item => item.name)
+        },
+        series: [
+            {
+                name: '查询数量',
+                type: 'pie',
+                radius: '50%',
+                data: data,
+                emphasis: {
+                    itemStyle: {
+                        shadowBlur: 10,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                    }
+                },
+                label: {
+                    show: true,
+                    formatter: '{b}: {c} ({d}%)'  // 显示名称、数量和百分比
+                }
+            }
+        ]
+    };
+
+    myPieChart.setOption(option);
+};
+
+const viewDailyQueries = async (date) => {
+    try {
+        const response = await getQueriesByDate(date);
+        if (response.data.status === 'success') {
+            currentQueries.value = response.data.data.map(query => query.query_text).join('\n'); // 假设返回的数据中有 query_text 字段
+            dialogVisible.value = true; // 显示对话框
+        } else {
+            ElMessage.error('获取查询语句失败');
+        }
+    } catch (error) {
+        console.error('获取查询语句失败:', error);
+        ElMessage.error('获取查询语句失败');
+    }
 };
 
 onMounted(() => {
     fetchStatistics();
+    fetchCategoriesStatistics(); // 获取大类统计数据
 });
 </script>
 
