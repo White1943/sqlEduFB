@@ -165,7 +165,7 @@
                     </el-tag>
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="250">
+            <el-table-column label="操作" width="350">
                 <template #default="scope">
                     <el-button
                         v-if="!scope.row.generated_sql"
@@ -189,6 +189,14 @@
                         @click="handleEdit(scope.row)"
                     >
                         编辑
+                    </el-button>
+                    <el-button
+                        type="info"
+                        size="small"
+                        @click="handleToggleStatus(scope.row)"
+                        v-if="scope.row.generated_sql"
+                    >
+                        {{ scope.row.status === 'pending' ? '批准' : '取消批准' }}
                     </el-button>
                     <el-button
                         type="danger"
@@ -215,6 +223,13 @@
                 </el-form-item>
                 <el-form-item label="涉及的表">
                     <el-input v-model="editForm.involved_tables" />
+                </el-form-item>
+                <el-form-item label="生成的SQL" v-if="editForm.generated_sql">
+                    <el-input
+                        v-model="editForm.generated_sql"
+                        type="textarea"
+                        rows="6"
+                    />
                 </el-form-item>
             </el-form>
             <template #footer>
@@ -315,7 +330,8 @@ import {
     generateQueries,
     updateNLQuery,
     deleteNLQuery,
-    getKnowledgePointsByCategory
+    getKnowledgePointsByCategory,
+    toggleQueryStatus
 } from '@/api/index';
 
 // 基础数据
@@ -642,6 +658,7 @@ const handleEdit = (row) => {
     editForm.involved_tables = row.involved_tables;
     editForm.schema_ids = row.schema_ids;
     editForm.knowledge_point_id = row.knowledge_point_id;
+    editForm.generated_sql = row.generated_sql;
     editDialogVisible.value = true;
 };
 
@@ -738,6 +755,22 @@ const handleSizeChange = (val: number) => {
 const handleCurrentChange = (val: number) => {
     currentPage.value = val;
     fetchQueries();
+};
+
+// 处理状态切换
+const handleToggleStatus = async (row) => {
+    try {
+        const response = await toggleQueryStatus(row.id);
+        if (response.data.status === 'success') {
+            ElMessage.success(response.data.message);
+            await fetchQueries(); // 刷新查询列表
+        } else {
+            ElMessage.error('状态更新失败');
+        }
+    } catch (error) {
+        console.error('状态更新失败:', error);
+        ElMessage.error('状态更新失败');
+    }
 };
 </script>
 

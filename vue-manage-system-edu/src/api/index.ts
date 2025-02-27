@@ -331,7 +331,12 @@ export const getCategoriesStatistics = () => {
     });
 };
 
-
-
+// 切换查询状态
+export const toggleQueryStatus = (queryId: number) => {
+    return request({
+        url: `/llm/nl_queries/${queryId}/toggle_status`,
+        method: 'post'
+    });
+};
 
 //额，这个是src/api/index.ts,在这里进行接口管理，方便复用，以前每个页面都写请求函数，是有点重用率低

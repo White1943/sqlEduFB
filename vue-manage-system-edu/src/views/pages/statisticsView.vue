@@ -37,7 +37,6 @@
             </el-table-column>
         </el-table>
 
-        <!-- 查询语句对话框 -->
         <el-dialog v-model="dialogVisible" title="查询语句" width="50%">
             <pre>{{ currentQueries }}</pre>
             <template #footer>
@@ -138,17 +137,16 @@ const renderPieChart = () => {
     if (!pieChartElement) return;
 
     const myPieChart = echarts.init(pieChartElement);
-    
-    // 修改数据处理逻辑，使用类别名称
+   
     const data = categoriesStatistics.value.map(category => ({
-        name: category.name,  // 使用类别名称
+        name: category.name,   
         value: category.count
     }));
 
     const option = {
         title: {
             text: '自然语言查询所属大类数量',
-            subtext: '饼状图展示',
+            subtext: '饼状图一览',
             left: 'center'
         },
         tooltip: {

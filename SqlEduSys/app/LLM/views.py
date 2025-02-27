@@ -161,38 +161,44 @@ def generate_sql_endpoint():
         
         # 获取所有相关的schema内容
         schema_contents = []
-        table_schemas = {}  # 用于存储每个表对应的schema内容
+        table_schemas = {}
         
         for schema_id in schema_ids.split(','):
             schema = Sqls.query.get_or_404(int(schema_id))
             schema_contents.append(schema.file_content)
             
-            # 解析schema内容，找到涉及的表的结构
             for table in involved_tables.split(','):
                 table = table.strip()
-                # 在schema内容中查找表结构
                 if table.lower() in schema.file_content.lower():
                     table_schemas[table] = schema.file_content
 
-        # 合并所有相关的schema内容
         combined_schema = "\n\n".join(
             f"-- Schema {schema_id}:\n{content}" 
             for schema_id, content in table_schemas.items()
         )
         
-        # 生成SQL
-        generated_sql = generate_sql_for_nl(
-            combined_schema,
-            query_text,
-            involved_tables
-        )
+        # 修改 prompt，要求只返回 SQL 语句
+        prompt = f"""
+        基于以下数据库表结构：
+        {combined_schema}
+        
+        自然语言查询：{query_text}
+        涉及的表：{involved_tables}
+        
+        请直接返回对应的 SQL 查询语句，不要包含任何解释、说明或其他额外信息。
+        
+        只需要返回一个有效的 SQL 语句，不要包含```sql ```,但出于格式展示美观，仍需保留换行
+        """
+        
+        # 正确传递参数
+        generated_sql = generate_sql_for_nl(prompt, query_text, involved_tables)
         
         if not generated_sql:
             return ApiResponse.error(message="Failed to generate SQL")
         
-        # 更新数据库
+        # 更新数据库，状态保持为 pending
         query.generated_sql = generated_sql
-        query.status = 'approved'
+        query.status = 'pending'  # 默认为 pending 状态
         db.session.commit()
         
         return ApiResponse.success(data={"sql": generated_sql})
@@ -261,10 +267,23 @@ def update_nl_query():
         # 更新字段
         query.query_text = data.get('query_text', query.query_text)
         query.involved_tables = data.get('involved_tables', query.involved_tables)
+        query.generated_sql = data.get('generated_sql', query.generated_sql)  # 添加 SQL 更新
         
         db.session.commit()
         return ApiResponse.success(message="查询已更新")
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"更新查询失败: {str(e)}")
+        return ApiResponse.error(message=str(e))
+
+# 添加新的状态切换接口
+@llm_bp.route('/nl_queries/<int:query_id>/toggle_status', methods=['POST'])
+def toggle_query_status(query_id):
+    try:
+        query = NLQueries.query.get_or_404(query_id)
+        query.status = 'approved' if query.status == 'pending' else 'pending'
+        db.session.commit()
+        return ApiResponse.success(message=f"状态已更新为 {query.status}")
+    except Exception as e:
+        db.session.rollback()
         return ApiResponse.error(message=str(e))
