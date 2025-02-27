@@ -338,5 +338,23 @@ export const toggleQueryStatus = (queryId: number) => {
         method: 'post'
     });
 };
+// 生成实验
+export const generateExperiment = (data: any) => {
+    return request({
+        url: '/experiment/generate',
+        method: 'post',
+        data
+    });
+};
 
+// 获取实验列表
+export const getExperiments = (params: any) => {
+    return request({
+        url: '/experiment/list',
+        method: 'get',
+        params
+    });
+};
 //额，这个是src/api/index.ts,在这里进行接口管理，方便复用，以前每个页面都写请求函数，是有点重用率低
+
+

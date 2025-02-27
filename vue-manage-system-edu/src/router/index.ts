@@ -305,6 +305,25 @@ const routes: RouteRecordRaw[] = [
                 component: () => import(  '../views/pages/nlQueries.vue'),
             },
             {
+                path: '/experiment-generate',
+                name: 'experiment-generate',
+                meta: {
+                    title: '实验作业生成',
+                    permiss: '152',
+                },
+                component: () => import(/* webpackChunkName: "experiment-generate" */ '../views/pages/experimentGenerate.vue'),
+            },
+            // {
+            //     path: '/experiment-manage',
+            //     name: 'experiment-manage',
+            //     meta: {
+            //         title: '实验作业管理',
+            //         permiss: '153',
+            //     },
+            //     component: () => import(/* webpackChunkName: "experiment-manage" */ '../views/pages/experimentManage.vue'),
+            // },
+
+            {
                 path: '/ai-chat',
                 name: 'ai-chat',
                 meta: {

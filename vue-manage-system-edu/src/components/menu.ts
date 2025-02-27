@@ -100,13 +100,13 @@ export const menuData: Menus[] = [
             {
                 id: '101',
                 pid: '10',
-                index: '/gen-experiment',
-                title: '生成实验作业',
+                index: '/experiment-generate',
+                title: '实验作业生成',
             },
             {
                 id: '102',
                 pid: '10',
-                index: '/system-experiment',
+                index: '/experiment-manage',
                 title: '实验作业管理',
             },
         ]

@@ -42,6 +42,8 @@ def create_app(config_class=Config):
     app.register_blueprint(knowledge_bp, url_prefix='/knowledge')
     from .statistics import statistics_bp
     app.register_blueprint(statistics_bp, url_prefix='/statistics')
+    from .experiment import experiment_bp
+    app.register_blueprint(experiment_bp, url_prefix='/experiment')
     return app
 
 
