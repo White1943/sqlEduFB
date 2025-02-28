@@ -20,9 +20,55 @@
           <!-- SQL文件列表表格 -->
           <el-table :data="sqlFiles" style="width: 100%; margin-top: 20px">
               <el-table-column prop="id" label="ID" width="80" />
-              <el-table-column prop="filename" label="文件名" width="180" />
-              <el-table-column prop="file_content" label="SQL内容" />
+              <el-table-column prop="filename" label="文件名" width="180">
+                  <template #default="scope">
+                      <span v-if="!scope.row.isEditing">{{ scope.row.filename }}</span>
+                      <el-input
+                          v-else
+                          v-model="scope.row.filename"
+                          size="small"
+                      />
+                  </template>
+              </el-table-column>
+              <el-table-column prop="file_content" label="SQL内容">
+                  <template #default="scope">
+                      <span v-if="!scope.row.isEditing">{{ scope.row.file_content }}</span>
+                      <el-input
+                          v-else
+                          v-model="scope.row.file_content"
+                          type="textarea"
+                          :rows="3"
+                      />
+                  </template>
+              </el-table-column>
               <el-table-column prop="created_at" label="上传时间" width="180" />
+              <el-table-column label="操作" width="200">
+                  <template #default="scope">
+                      <el-button
+                          v-if="!scope.row.isEditing"
+                          type="primary"
+                          size="small"
+                          @click="handleEdit(scope.row)"
+                      >
+                          编辑
+                      </el-button>
+                      <el-button
+                          v-else
+                          type="success"
+                          size="small"
+                          @click="handleSave(scope.row)"
+                      >
+                          保存
+                      </el-button>
+                      <el-button
+                          type="danger"
+                          size="small"
+                          @click="handleDelete(scope.row)"
+                      >
+                          删除
+                      </el-button>
+                  </template>
+              </el-table-column>
           </el-table>
       </div>
   </div>
@@ -30,10 +76,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { ElMessage } from 'element-plus';
-import { uploadSchema, tableSchema } from '../api';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { uploadSqlFile, getSqlFiles, deleteSqlFile, updateSqlFile } from '@/api/index';
 import { UploadFilled } from '@element-plus/icons-vue';
-
 
 const sqlFiles = ref([]);
 const selectedFile = ref(null);
@@ -42,7 +87,6 @@ const selectedFile = ref(null);
 const handleFileChange = (file) => {
   selectedFile.value = file.raw;
 };
-
 
 const handleUpload = async () => {
     if (!selectedFile.value) {
@@ -55,33 +99,74 @@ const handleUpload = async () => {
 
     try {
         const response = await uploadSqlFile(formData);
-        if (response.code === 200) {
-            ElMessage.success(response.msg || '文件上传成功');
+        console.log(response)
+        if (response.data.status === 'success') {
+            ElMessage.success(response.data.message || '文件上传成功');
             fetchSqlFiles(); // 刷新文件列表
         } else {
-            ElMessage.error(response.msg || '文件上传失败');
+            ElMessage.error(response.data.message || '文件上传失败');
         }
+
+
+
     } catch (error) {
         ElMessage.error('文件上传失败');
+    }
+};
+
+const handleEdit = (row) => {
+    row.isEditing = true;
+    row.originalData = { ...row };
+};
+
+const handleSave = async (row) => {
+    try {
+        await updateSqlFile(row.id, {
+            filename: row.filename,
+            file_content: row.file_content
+        });
+        row.isEditing = false;
+        ElMessage.success('更新成功');
+    } catch (error) {
+        ElMessage.error('更新失败');
+        Object.assign(row, row.originalData);
+    }
+};
+
+const handleDelete = async (row) => {
+    try {
+        await ElMessageBox.confirm('确定要删除这条记录吗？', '提示', {
+            type: 'warning'
+        });
+        
+        await deleteSqlFile(row.id);
+        ElMessage.success('删除成功');
+        fetchSqlFiles(); // 刷新列表
+    } catch (error) {
+        if (error !== 'cancel') {
+            ElMessage.error('删除失败');
+        }
     }
 };
 
 const fetchSqlFiles = async () => {
     try {
         const response = await getSqlFiles();
-        if (response.code === 200) {
-            sqlFiles.value = response.data;
+        if (response.data.status === 'success') {
+            sqlFiles.value = response.data.data.map(item => ({
+                ...item,
+                isEditing: false
+            }));
         } else {
-            ElMessage.error(response.msg || '获取文件列表失败');
+            ElMessage.error(response.data.message || '获取文件列表失败');
         }
     } catch (error) {
         ElMessage.error('获取文件列表失败');
     }
 };
 
-
 onMounted(() => {
-  fetchSqlFiles();
+    fetchSqlFiles();
 });
 </script>
 

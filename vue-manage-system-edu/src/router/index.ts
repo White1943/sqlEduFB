@@ -9,6 +9,7 @@ const routes: RouteRecordRaw[] = [
         path: '/',
         redirect: '/dashboard',
     },
+ 
     {
         path: '/',
         name: 'Home',
@@ -257,15 +258,80 @@ const routes: RouteRecordRaw[] = [
                 component: () => import(/* webpackChunkName: "sql-validator" */ '../views/pages/schemaTable.vue'),
             },
             {
-                path: '/knowledge',
-                name: 'knowledge',
+                path: '/knowledge-category',
+                name: 'knowledge-category',
+                meta: {
+                    title: '知识点分类',
+                    permiss: '1531'
+                },
+                component: () => import('../views/pages/knowledgeCategory.vue')
+            },
+            {
+                path: '/knowledge-points',
+                name: 'knowledge-points',
                 meta: {
                     title: '知识点管理',
-                    permiss: '11',  
+                    permiss: '1532'
                 },
-                component: () => import( '../views/pages/knowledge.vue'),
+                component: () => import('../views/pages/knowledgePoints.vue')
+            }   ,
+
+ //弃用
+            // {
+            //     path: '/knowledge-manage',
+            //     name: 'knowledgeManage',
+            //     meta: {
+            //         title: '知识点管理',
+            //         permiss: '153',  
+            //     },
+            //     component: () => import( '../views/pages/knowledgeManage.vue'),
+            // },
+            {
+                path: '/statistics-view',
+                name: 'statisticsView',
+                meta: {
+                    title: '统计与查看',
+                    permiss: '154',
+                },
+                component: () => import( '../views/pages/statisticsView.vue'),
             },
-            
+            {
+                path: '/nl-queries',
+                name: 'nlQueries',
+                meta: {
+                    title: '自然语言查询管理',
+                    permiss: '151',
+                },
+                component: () => import(  '../views/pages/nlQueries.vue'),
+            },
+            {
+                path: '/experiment-generate',
+                name: 'experiment-generate',
+                meta: {
+                    title: '实验作业生成',
+                    permiss: '152',
+                },
+                component: () => import(/* webpackChunkName: "experiment-generate" */ '../views/pages/experimentGenerate.vue'),
+            },
+            // {
+            //     path: '/experiment-manage',
+            //     name: 'experiment-manage',
+            //     meta: {
+            //         title: '实验作业管理',
+            //         permiss: '153',
+            //     },
+            //     component: () => import(/* webpackChunkName: "experiment-manage" */ '../views/pages/experimentManage.vue'),
+            // },
+
+            {
+                path: '/ai-chat',
+                name: 'ai-chat',
+                meta: {
+                    title: 'SQL对话学习',
+                    permiss: '161',
+                },
+                component: () => import(/* webpackChunkName: "ai-chat" */ '../views/pages/aiChat.vue'),
+            },
         ],
     },
     {
@@ -316,20 +382,36 @@ const router = createRouter({
     routes,
 });
 
-router.beforeEach((to, from, next) => {
-    NProgress.start();
-    const role = localStorage.getItem('vuems_name');
-    const permiss = usePermissStore();
+// router.beforeEach((to, from, next) => {
+//     NProgress.start();
+//     const role = localStorage.getItem('vuems_name');
+//     const permiss = usePermissStore();
 
-    if (!role && to.meta.noAuth !== true) {
-        next('/login');
-    } else if (typeof to.meta.permiss == 'string' && !permiss.key.includes(to.meta.permiss)) {
-        // 如果没有权限，则进入403
-        next('/403');
-    } else {
-        next();
-    }
-});
+//     if (!role && to.meta.noAuth !== true) {
+//         next('/login');
+//     } else if (typeof to.meta.permiss == 'string' && !permiss.key.includes(to.meta.permiss)) {
+//         // 如果没有权限，则进入403
+//         next(    {
+//                 path: '/schema-upload',
+//                 name: 'schema-upload',
+//                 meta: {
+//                     title: '表模式导入',
+//                     permiss: '92',  
+//                 },
+//                 component: () => import(/* webpackChunkName: "sql-validator" */ '../views/pages/schemaUpload.vue'),
+//             }, {
+//                 path: '/schema-table',
+//                 name: 'schema-table',
+//                 meta: {
+//                     title: '查看表结构',
+//                     permiss: '91',  
+//                 },
+//                 component: () => import(/* webpackChunkName: "sql-validator" */ '../views/pages/schemaTable.vue'),
+//             },'/403');
+//     } else {
+//         next();
+//     }
+// });
 
 router.afterEach(() => {
     NProgress.done();

@@ -1,3 +1,5 @@
+<!-- 已弃用 -->
+
 <template>
     <div class="queries">
       <el-input v-model="queryTemplate" placeholder="请输入查询需求描述" />

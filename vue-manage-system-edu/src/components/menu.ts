@@ -31,6 +31,117 @@ export const menuData: Menus[] = [
             },
         ]
     },
+  
+    {
+        id:'9',
+        title:'数据库管理',
+        index:'9',
+        icon:'upload-filled',
+        children:[
+            {
+                id: '91',
+                pid: '9',
+                index: '/schema-table',
+                title: '查看表结构',
+            },
+            {
+                id: '92',
+                pid: '9',
+                index: '/schema-upload',
+                title: '表模式导入',
+            },
+        ]
+    },
+
+    {
+        id:'153',
+        title:'知识点',
+        index:'/knowledge-manage',
+        icon:'Notebook',
+       
+        children:[
+            {
+                id: '1531',
+                pid: '153',
+                index: '/knowledge-category',
+                 title: '知识点分类'
+            },
+            {
+                id: '1532',
+                pid:'153' ,
+                index: '/knowledge-points',
+                title: '知识点管理'
+            },
+        ]
+    },
+    {
+        id:'15',
+        title:'自然语言查询',
+        index:'/nl-queries',
+        icon:'sort',
+
+        children:[
+            {
+                id: '151',
+                pid: '15',
+                index: '/nl-queries',
+                title: '自然语言查询生成',
+            },
+
+         
+        ]
+    },
+    {
+        id:'10',
+        title:'实验作业管理',
+        index:'10',
+        icon:'edit',
+        children:[
+            {
+                id: '101',
+                pid: '10',
+                index: '/experiment-generate',
+                title: '实验作业生成',
+            },
+            {
+                id: '102',
+                pid: '10',
+                index: '/experiment-manage',
+                title: '实验作业管理',
+            },
+        ]
+    },
+    {
+        id:'154',
+        title:'统计与查看',
+        index:'/statistics-view',
+        icon:'Histogram',
+        children:[
+            {
+                id:'1541',
+                pid:'154',
+                index:'/statistics-view',
+                title:'统计与查看'
+            },
+ 
+        ]
+    },
+   
+     
+    {
+        id: '16',
+        title: 'AI助手',
+        index: '16',
+        icon: 'ChatDotRound',
+        children: [
+            {
+                id: '161',
+                pid: '16',
+                index: '/ai-chat',
+                title: 'SQL对话学习',
+            }
+        ]
+    },
     {
         id: '1',
         title: '系统管理',
@@ -58,66 +169,6 @@ export const menuData: Menus[] = [
                 },
            
         ],
-    },
-    {
-        id:'9',
-        title:'数据库管理',
-        index:'9',
-        icon:'upload-filled',
-        children:[
-            {
-                id: '91',
-                pid: '9',
-                index: '/schema-table',
-                title: '查看表结构',
-            },
-            {
-                id: '92',
-                pid: '9',
-                index: '/schema-upload',
-                title: '表模式导入',
-            },
-        ]
-    },
-    {
-        id:'10',
-        title:'实验作业管理',
-        index:'10',
-        icon:'edit',
-        children:[
-            {
-                id: '101',
-                pid: '10',
-                index: '/gen-experiment',
-                title: '查看表结构',
-            },
-            {
-                id: '102',
-                pid: '10',
-                index: '/system-experiment',
-                title: '表模式导入',
-            },
-        ]
-    },
-    {
-        id:'11',
-        title:'知识点管理',
-        index:'/knowledge',
-        icon:'sort',
-        // children:[
-        //     {
-        //         id: '111',
-        //         pid: '11',
-        //         index: '/table',
-        //         title: '知识点管理',
-        //     },
-        //     {
-        //         id: '112',
-        //         pid:'11' ,
-        //         index: '/upload',
-        //         title: '知识点分类',
-        //     },
-        // ]
     },
     {
         id: '2',

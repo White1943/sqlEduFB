@@ -83,11 +83,14 @@ const login = ref<FormInstance>();
                     username: param.username,
                     password: param.password,
                 });
-                console.log('Login successful:', response); // 打印出响应内容
+                console.log('Login successful:', response);
                 ElMessage.success('登录成功');  
-                // alert(response.data.data.is_admin)
-                localStorage.setItem('is_admin',response.data.data.is_admin)
+                
+                // 存储完整的用户信息
+                localStorage.setItem('is_admin', response.data.data.is_admin);
                 localStorage.setItem('vuems_name', param.username);
+                localStorage.setItem('vuems_role', response.data.data.is_admin ? '管理员' : '普通用户');
+                
                 router.push('/');
             } catch (error) {
                 console.error('Login error:', error); // 打印出错误信息

@@ -1,26 +1,51 @@
 from flask import Flask
-from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from app.config import Config
+from flask_cors import CORS
 
-from .LLM.views import sql_stu_bp
-from .config import Config
-from .schema.upload import bp as schema_upload_bp
+# 创建db实例但不初始化
 db = SQLAlchemy()
 migrate = Migrate()
 
-def create_app():
+def create_app(config_class=Config):
     app = Flask(__name__)
-
-    app.config.from_object(Config)  # 从 Config 类中加载配置
-    CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
-
+    app.config.from_object(config_class)
+    # 设置测试模式
+    # app.config['TESTING'] = True  # 临时启用测试模式
+    # 配置CORS，允许所有路由
+    CORS(app, resources={
+        r"/*": {
+            "origins": ["http://localhost:5173"],  
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # 允许的方法
+            "allow_headers": ["Content-Type", "Authorization"],  # 允许的请求头
+            "supports_credentials": True  # 允许携带凭证
+        }
+    })
+    # 初始化扩展
     db.init_app(app)
     migrate.init_app(app, db)
+
+    # 注册蓝图
     from .auth import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
-    app.register_blueprint(sql_stu_bp, url_prefix='/sql')
-    app.register_blueprint(schema_upload_bp, url_prefix='/schema')
 
+    from .schema import schema_bp
+    app.register_blueprint(schema_bp, url_prefix='/schema')
+    from .LLM import sql_stu_bp
+    app.register_blueprint(sql_stu_bp, url_prefix='/stu')
+    from .LLM import llm_bp
+    app.register_blueprint(llm_bp, url_prefix='/llm')
+    from app.chat.views import chat_bp
+    app.register_blueprint(chat_bp, url_prefix='/chat')
+    from .knowledge import knowledge_bp
+    app.register_blueprint(knowledge_bp, url_prefix='/knowledge')
+    from .statistics import statistics_bp
+    app.register_blueprint(statistics_bp, url_prefix='/statistics')
+    from .experiment import experiment_bp
+    app.register_blueprint(experiment_bp, url_prefix='/experiment')
     return app
+
+
+
 # app\__init__.py

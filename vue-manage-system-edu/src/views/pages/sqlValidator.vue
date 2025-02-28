@@ -31,9 +31,13 @@ const validateSQLQuery = async() => {
         console.log(response)
         validationResult.value = response.data.data;   
         if (validationResult.toString().includes('不符合描述')) {
-            ElMessage.error('SQL 需要修改:'+validationResult);
-        } else {
-            ElMessage.success('SQL 符合描述:'+ validationResult);
+            ElMessage.error('SQL 需要修改:' );
+        }
+        else if (!validationResult.toString().includes('符合要求')) {
+            ElMessage.error('SQL 需要修改:' );
+        }
+        else {
+            ElMessage.success('SQL 符合描述:' );
         }
     } catch (error) {
         console.error('Error validating SQL:', error);
