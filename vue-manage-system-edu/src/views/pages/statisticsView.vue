@@ -16,12 +16,12 @@
 
         <el-divider></el-divider>
 
-        <h3>生成趋势图</h3>
+        <h3></h3>
         <div ref="chart" style="height: 400px; width: 100%;"></div>
 
         <el-divider></el-divider>
 
-        <h3>自然语言查询所属大类数量</h3>
+        <h3>生成的知识点大类类型</h3>
         <div id="pie-chart" style="height: 400px; width: 100%;"></div>
 
         <el-divider></el-divider>
@@ -59,8 +59,8 @@ const statistics = ref({
     daily_nl_queries: {}
 });
 const dailyQueries = ref([]);
-const dialogVisible = ref(false); // 控制对话框的可见性
-const currentQueries = ref(''); // 存储当前查询语句
+const dialogVisible = ref(false);  
+const currentQueries = ref(''); // 存当前查询语句
 
 interface CategoryStatistic {
     id: number;
@@ -112,7 +112,7 @@ const renderChart = () => {
     
     const option = {
         title: {
-            text: '生成趋势图'
+            text: '生成自然语言查询的趋势图'
         },
         tooltip: {},
         xAxis: {
@@ -145,7 +145,7 @@ const renderPieChart = () => {
 
     const option = {
         title: {
-            text: '自然语言查询所属大类数量',
+            text: '自然语言查询所属大类数量及占比',
             subtext: '饼状图一览',
             left: 'center'
         },
