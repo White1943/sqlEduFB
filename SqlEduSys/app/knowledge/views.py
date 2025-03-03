@@ -56,16 +56,20 @@ def update_category(category_id):
 
 @knowledge_bp.route('/categories/<int:category_id>', methods=['DELETE'])
 def delete_category(category_id):
-    """删除知识点分类"""
+    """删除知识点分类及其下的所有知识点"""
     try:
-        category = KnowledgeCategory.query.get_or_404(category_id)
-        db.session.delete(category)
-        db.session.commit()
-        return ApiResponse.success(message="删除成功")
+        # 开启事务
+        with db.session.begin():
+            category = KnowledgeCategory.query.get_or_404(category_id)
+             
+            KnowledgePoint.query.filter_by(category_id=category_id).delete()
+             
+            db.session.delete(category)            
+        return ApiResponse.success(message="删除分类及其下所有知识点成功")
     except Exception as e:
-        db.session.rollback()
+        # 由于使用了 with 语句，异常时会自动回滚，不需要显式调用 rollback
         current_app.logger.error(f"删除知识点分类失败: {str(e)}")
-        return ApiResponse.error(message="删除知识点分类失败")
+        return ApiResponse.error(message=f"删除知识点分类失败: {str(e)}")
 
 # 知识点相关接口
 @knowledge_bp.route('/points', methods=['GET'])
