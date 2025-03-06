@@ -4,7 +4,7 @@ import os
 import json
 import time
 
-from flask import request
+from flask import request, current_app
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -269,6 +269,49 @@ def generate_sql_for_nl(schema_content: str, query_text: str, involved_tables: s
 
     except Exception as e:
         print(f"生成SQL错误: {str(e)}")
+        return None
+
+def get_experiment_report_response(prompt: str) -> str:
+    """
+    调用大模型API获取实验报告响应
+    """
+    try:
+        current_app.logger.info("Sending request to LLM API for experiment report...")
+
+        # 构建完整的 prompt
+        full_prompt = f"""
+        你是一个专业的实验报告生成器，负责根据提供的信息生成实验报告。
+
+        请根据以下信息生成实验报告：
+        
+        {prompt}
+        
+        请确保报告内容清晰、结构合理，并符合实验要求。
+        """
+
+        completion = client.chat.completions.create(
+            model="qwen-plus",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "你是一个专业的实验报告生成器，精通实验设计和报告撰写。"
+                },
+                {
+                    "role": "user",
+                    "content": full_prompt
+                }
+            ]
+        )
+
+        if completion and completion.choices:
+            response_text = completion.choices[0].message.content
+            return response_text.strip()  # 返回生成的实验报告内容
+        else:
+            current_app.logger.error("Invalid response format from LLM API")
+            return None
+
+    except Exception as e:
+        current_app.logger.error(f"Error in get_experiment_report_response: {str(e)}")
         return None
 
 

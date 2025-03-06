@@ -9,6 +9,7 @@ from app.LLM.model import get_llm_response
 from app.LLM import llm_bp
 from app.models.knowledges import KnowledgePoint,KnowledgeCategory
 from app.LLM import sql_stu_bp
+import json
 
 @sql_stu_bp.route('/generator', methods=['POST'])
 def generate():
@@ -46,72 +47,94 @@ def generate_nl_queries():
     try:
         data = request.get_json()
         schema_ids = data.get('schema_ids', [])
-        print(data)
         points = data.get('points', [])
-        print("points:", points)
+        
         if not schema_ids or not points:
             return ApiResponse.error(message="请选择数据库模式和知识点")
             
-        # 获取数据库表结构信息
         schemas = Sqls.query.filter(Sqls.id.in_(schema_ids)).all()
         if not schemas:
             return ApiResponse.error(message="未找到选中的数据库模式")
             
-        # 组合所有表的结构信息 - 修正这里使用正确的属性名
         schema_info = "\n".join([schema.file_content for schema in schemas])  
         generated_queries = []
+        
         for point in points:
-            # 修改这里，正确获取 point 的属性
             point_id = point.get('id')
             count = point.get('generateCount', 1)
             
-            # 获取知识点详情
             knowledge_point = KnowledgePoint.query.get(point_id)
             if not knowledge_point:
                 continue
+            
+            # 获取已有的查询，用于避免重复
+            print("Point ID:", point_id)
+            print("Schema IDs:", schema_ids)
+            existing_queries = (NLQueries.query
+                .filter(
+                    NLQueries.knowledge_point_id == point_id,
+                    db.or_(*[
+                        db.text(f"FIND_IN_SET('{schema_id}', schema_ids) > 0")
+                        for schema_id in schema_ids
+                    ])
+                )
+                .with_entities(NLQueries.query_text)
+                .all())
+            existing_queries = [q.query_text for q in existing_queries]
+            print("Existing Queries:", existing_queries)
+            
+            # 修改提示词，强调生成不同的查询
+            prompt = f"""
+            基于以下数据库表结构：
+            {schema_info}
+            
+            知识点信息：
+            名称：{knowledge_point.point_name}
+            描述：{knowledge_point.description}
+            示例SQL：{knowledge_point.example_sql}
+            
+            已有的查询描述：
+            {json.dumps(existing_queries, ensure_ascii=False, indent=2)}
+            
+            请生成 {count} 个新的、不同的查询描述，要求：
+            1. 每个查询都必须与已有查询不同
+            2. 每个查询之间的内容也要不同
+            3. 查询的难度和复杂度可以有所变化
+            4. 确保查询符合知识点的要求和特点
+            5. 每个查询都要以 @[表名1,表名2] 格式开头，后面跟着具体的查询描述
+            
+            返回格式示例：
+            @[表1,表2] 第一个查询描述
+            @[表3] 第二个查询描述
+            ...
+            """
+            
+            query_text = get_llm_response(prompt)
+            print("LLM Response:", query_text)
+            if query_text:
+                # 处理返回的多个查询
+                queries = [q.strip() for q in query_text.split('\n') if q.strip() and q.strip().startswith('@[')]
                 
-            # 使用知识点信息和示例生成查询
-            for _ in range(count):
-                try:
-
-                    prompt = f"""
-                    基于以下数据库表结构：
-                    {schema_info}
-                    
-                    知识点信息：
-                    名称：{knowledge_point.point_name}
-                    描述：{knowledge_point.description}
-                    示例SQL：{knowledge_point.example_sql}
-                    需要生成的查询数量：1
-                    
-                    请生成一个新的查询描述，格式为：
-                    @[表名1,表名2] 查询描述
-                    """
-                    
-
-                    query_text = get_llm_response(prompt)
-                    if query_text:
-
-                        # 检查是否成功获取响应
-                        if query_text.startswith('@[') and ']' in query_text:
-
-                            tables = query_text[2:query_text.find(']')].split(',')
-                            description = query_text[query_text.find(']')+1:].strip()
+                # 确保不重复
+                seen_queries = set()
+                for query in queries:
+                    if query not in seen_queries and len(seen_queries) < count:
+                        if query.startswith('@[') and ']' in query:
+                            tables = query[2:query.find(']')].split(',')
+                            description = query[query.find(']')+1:].strip()
                             
-                            # 创建新的查询记录
-                            new_query = NLQueries(
-                                query_text=description,
-                                involved_tables=",".join(tables),  # 使用解析出的表名
-                                schema_ids=",".join(map(str, schema_ids)),
-                                knowledge_point_id=point_id,
-                                status='pending'
-                            )
-                            db.session.add(new_query)
-                            generated_queries.append(new_query)
-                
-                except Exception as e:
-                    current_app.logger.error(f"生成单条查询失败: {str(e)}")
-                    continue
+                            # 检查是否与已有查询重复
+                            if description not in existing_queries:
+                                new_query = NLQueries(
+                                    query_text=description,
+                                    involved_tables=",".join(tables),
+                                    schema_ids=",".join(map(str, schema_ids)),
+                                    knowledge_point_id=point_id,
+                                    status='pending'
+                                )
+                                db.session.add(new_query)
+                                generated_queries.append(new_query)
+                                seen_queries.add(query)
         
         # 提交所有生成的查询
         if generated_queries:
@@ -287,3 +310,4 @@ def toggle_query_status(query_id):
     except Exception as e:
         db.session.rollback()
         return ApiResponse.error(message=str(e))
+

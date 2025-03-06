@@ -1,3 +1,6 @@
+from  app.models.knowledges import KnowledgePoint
+
+
 SCHEMA_TO_NL_PROMPT = """
 你是一个SQL专家，请基于以下信息生成自然语言查询描述：
 
@@ -46,3 +49,31 @@ NL_TO_SQL_PROMPT = """
 3. 查询逻辑完整准确
 4. 代码风格清晰规范
 """
+
+def generate_prompt(schema_info, points, version, report_content ):
+    
+    print("schema_info from generate_prompt",schema_info)
+    print("points from generate_prompt",points)
+    print("version from generate_prompt",version)
+    print("report_content from generate_prompt",report_content)
+    """生成提示词"""
+    prompt = f"根据以下数据库模式，根据report_content从中筛选相应的知识点，sql答案以及需要的知识点数量生成实验报告：\n\n"
+    prompt += f"数据库模式:\n{schema_info}\n\n"
+    prompt += f"report_content:\n{report_content}\n\n"
+    prompt += f"知识点以及对应的数量:\n"
+    for point in points:
+        point_id = point.get('id')
+        generateCount = point.get('generateCount', 1)
+        
+        knowledge_point = KnowledgePoint.query.get(point_id)
+     
+        prompt += f"- {knowledge_point.point_name} -- {generateCount}\n"
+    
+    print("prompt from generate_prompt",prompt)
+    
+    if version == 'teacher':
+        prompt += "请生成教师版实验报告。教师版实验报告需包含实验题目，题目最后说明涉及的知识点名字，每个题后有着相应题目的答案，较难的题目提供简要的解题思路以及简要答案讲解\n"
+    else:
+        prompt += "请生成学生版实验报告。学生版实验报告需包含实验题目，题目最后说明涉及的知识点名字，不包括相应题目的答案，每个题后面有着答题区空间\n"
+    
+    return prompt
