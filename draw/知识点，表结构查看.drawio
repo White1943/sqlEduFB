@@ -1,9 +1,54 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36" version="26.1.0">
   <diagram name="第 1 页" id="5jYpzlWKnVkxn2_NL3Rs">
-    <mxGraphModel>
+    <mxGraphModel dx="1570" dy="1591" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-1" value="开始" style="ellipse;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;" vertex="1" parent="1">
+          <mxGeometry x="250" y="50" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-2" value="进入查看表结构页面" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;" vertex="1" parent="1">
+          <mxGeometry x="200" y="150" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-3" value="选择数据库文件" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="250" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-4" value="后端返回表结构数据" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;" vertex="1" parent="1">
+          <mxGeometry x="200" y="350" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-5" value="进入知识点分类页面" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;" vertex="1" parent="1">
+          <mxGeometry x="500" y="150" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-6" value="查看所有分类及知识点数量" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="500" y="250" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-7" value="编辑/新增/删除分类" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;" vertex="1" parent="1">
+          <mxGeometry x="500" y="350" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-8" value="进入知识点管理页面" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;" vertex="1" parent="1">
+          <mxGeometry x="800" y="150" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-9" value="查看所有知识点" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="800" y="250" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-10" value="查看/编辑/删除知识点" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;" vertex="1" parent="1">
+          <mxGeometry x="800" y="350" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-11" value="结束" style="ellipse;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;" vertex="1" parent="1">
+          <mxGeometry x="500" y="450" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-12" edge="1" parent="1" source="6RRrWqq5OotgPy2Kbosw-1" target="6RRrWqq5OotgPy2Kbosw-2" />
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-13" edge="1" parent="1" source="6RRrWqq5OotgPy2Kbosw-2" target="6RRrWqq5OotgPy2Kbosw-3" />
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-14" edge="1" parent="1" source="6RRrWqq5OotgPy2Kbosw-3" target="6RRrWqq5OotgPy2Kbosw-4" />
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-15" edge="1" parent="1" source="6RRrWqq5OotgPy2Kbosw-4" target="6RRrWqq5OotgPy2Kbosw-11" />
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-16" edge="1" parent="1" source="6RRrWqq5OotgPy2Kbosw-1" target="6RRrWqq5OotgPy2Kbosw-5" />
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-17" edge="1" parent="1" source="6RRrWqq5OotgPy2Kbosw-5" target="6RRrWqq5OotgPy2Kbosw-6" />
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-18" edge="1" parent="1" source="6RRrWqq5OotgPy2Kbosw-6" target="6RRrWqq5OotgPy2Kbosw-7" />
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-19" edge="1" parent="1" source="6RRrWqq5OotgPy2Kbosw-7" target="6RRrWqq5OotgPy2Kbosw-11" />
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-20" edge="1" parent="1" source="6RRrWqq5OotgPy2Kbosw-1" target="6RRrWqq5OotgPy2Kbosw-8" />
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-21" edge="1" parent="1" source="6RRrWqq5OotgPy2Kbosw-8" target="6RRrWqq5OotgPy2Kbosw-9" />
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-22" edge="1" parent="1" source="6RRrWqq5OotgPy2Kbosw-9" target="6RRrWqq5OotgPy2Kbosw-10" />
+        <mxCell id="6RRrWqq5OotgPy2Kbosw-23" edge="1" parent="1" source="6RRrWqq5OotgPy2Kbosw-10" target="6RRrWqq5OotgPy2Kbosw-11" />
       </root>
     </mxGraphModel>
   </diagram>
