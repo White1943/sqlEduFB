@@ -22,7 +22,7 @@ def create_app(config_class=Config):
             "supports_credentials": True  # 允许携带凭证
         }
     })
-    # 初始化扩展
+
     db.init_app(app)
     migrate.init_app(app, db)
 
@@ -44,6 +44,10 @@ def create_app(config_class=Config):
     app.register_blueprint(statistics_bp, url_prefix='/statistics')
     from .experiment import experiment_bp
     app.register_blueprint(experiment_bp, url_prefix='/experiment')
+
+    # 在应用创建后添加
+    app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 限制为 50MB
+
     return app
 
 

@@ -346,15 +346,60 @@ export const generateExperiment = (data: any) => {
         data
     });
 };
+export const getExperimentByPointsCategory = (id: any) => {
+    return request({
+        url: `/experiment/points/category/${id}`,
+        method: 'get'
+    });
+};
+ 
+export const getExperiments = (params: {
+    schema_ids: number[];
+    page: number;
+    page_size: number;
+}) => {
+    return request({
+        url: '/experiment/queries',
+        method: 'get',
+        params: {
+            ...params,
+            schema_ids: params.schema_ids.join(',')  // 转换为逗号分隔的字符串
+        }
+    });
+};
+//额，这个是src/api/index.ts,在这里进行接口管理，方便复用，以前每个页面都写请求函数，是有点重用率低
 
-// 获取实验列表
-export const getExperiments = (params: any) => {
+// 使用本地生成方式生成实验报告
+export const generateExperiment2nd = (data: any) => {
+    return request({
+        url: '/experiment/generate2nd',
+        method: 'post',
+        data
+    });
+};
+
+// 获取实验报告列表
+export const getExperimentsList = (params: any) => {
     return request({
         url: '/experiment/list',
         method: 'get',
         params
     });
 };
-//额，这个是src/api/index.ts,在这里进行接口管理，方便复用，以前每个页面都写请求函数，是有点重用率低
+
+// 下载实验报告
+export const downloadExperiment = (id: number) => {
+    const url = `${import.meta.env.VITE_APP_BASE_API}/experiment/download/${id}`;
+    window.open(url, '_blank');
+};
+
+// 更新实验报告
+export const updateExperiment = (data: any) => {
+    return request({
+        url: `/experiment/update/${data.id}`,
+        method: 'put',
+        data
+    });
+};
 
 
