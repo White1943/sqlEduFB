@@ -35,10 +35,8 @@
         <mxCell id="WIyWlLk6GJQsqaUBKTNV-12" value="显示该报告" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;labelBackgroundColor=none;fillColor=#A8DADC;strokeColor=#457B9D;fontColor=#1D3557;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="160" y="240" width="120" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="GEPSyZJp9nbFbYlHAnnY-49" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;labelBackgroundColor=none;strokeColor=#457B9D;fontColor=default;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="GEPSyZJp9nbFbYlHAnnY-0">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="609.9999999999998" y="482.6470588235294" as="targetPoint" />
-          </mxGeometry>
+        <mxCell id="GEPSyZJp9nbFbYlHAnnY-56" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;strokeColor=#457B9D;fontColor=#1D3557;fillColor=#A8DADC;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="GEPSyZJp9nbFbYlHAnnY-0" target="GEPSyZJp9nbFbYlHAnnY-51">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="GEPSyZJp9nbFbYlHAnnY-0" value="实验报告" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;labelBackgroundColor=none;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
           <mxGeometry x="480" y="468" width="80" height="50" as="geometry" />
@@ -154,7 +152,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="GEPSyZJp9nbFbYlHAnnY-51" value="结束" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.start_1;whiteSpace=wrap;labelBackgroundColor=none;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
-          <mxGeometry x="610" y="460" width="90" height="50" as="geometry" />
+          <mxGeometry x="615" y="468" width="90" height="50" as="geometry" />
         </mxCell>
         <mxCell id="GEPSyZJp9nbFbYlHAnnY-53" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;strokeColor=#457B9D;fontColor=#1D3557;fillColor=#A8DADC;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="GEPSyZJp9nbFbYlHAnnY-31" target="GEPSyZJp9nbFbYlHAnnY-32">
           <mxGeometry relative="1" as="geometry" />
