@@ -153,6 +153,9 @@
         <mxCell id="_8PwzIx_y7-3H37tJzUT-69" value="对知识点大类i下&#xa;所有知识点&#xa;生成ij条数据" style="text;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
           <mxGeometry x="189" y="147.5" width="105" height="55" as="geometry" />
         </mxCell>
+        <mxCell id="_8PwzIx_y7-3H37tJzUT-72" value="no" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="273" y="264" width="31" height="26" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
