@@ -25,23 +25,23 @@
             <mxRectangle x="640" y="78.5" width="100" height="30" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="w4PSEf6JW52mtWiH3uxk-5" value="SQL&#xa;生&#xa;成&#xa;与&#xa;验&#xa;证" style="rounded=1;fillColor=#b3e2dc;labelPosition=center;verticalLabelPosition=middle;align=center;verticalAlign=middle;horizontal=1;whiteSpace=wrap;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="490" y="290" width="30" height="158.5" as="geometry" />
+        <mxCell id="w4PSEf6JW52mtWiH3uxk-5" value="SQL&#xa;生&#xa;成&#xa;与&#xa;管理模块" style="rounded=1;fillColor=#b3e2dc;labelPosition=center;verticalLabelPosition=middle;align=center;verticalAlign=middle;horizontal=1;whiteSpace=wrap;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+          <mxGeometry x="484" y="290" width="30" height="158.5" as="geometry" />
         </mxCell>
-        <mxCell id="w4PSEf6JW52mtWiH3uxk-6" value="实&#xa;验报告生成" style="rounded=1;fillColor=#b3e2dc;labelPosition=center;verticalLabelPosition=middle;align=center;verticalAlign=middle;whiteSpace=wrap;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="530" y="290" width="20" height="158.5" as="geometry" />
+        <mxCell id="w4PSEf6JW52mtWiH3uxk-6" value="实&#xa;验报告生成与下载模块" style="rounded=1;fillColor=#b3e2dc;labelPosition=center;verticalLabelPosition=middle;align=center;verticalAlign=middle;whiteSpace=wrap;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+          <mxGeometry x="523" y="290" width="20" height="158.5" as="geometry" />
         </mxCell>
-        <mxCell id="w4PSEf6JW52mtWiH3uxk-13" value="知&#xa;识&#xa;点&#xa;管&#xa;理" style="rounded=1;fillColor=#b3e2dc" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+        <mxCell id="w4PSEf6JW52mtWiH3uxk-13" value="知&#xa;识&#xa;点&#xa;管&#xa;理模块&#xa;" style="rounded=1;fillColor=#b3e2dc;verticalAlign=middle;align=center;horizontal=1;strokeColor=default;fontFamily=Helvetica;fontSize=12;fontColor=default;whiteSpace=wrap;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="420" y="290" width="20" height="158.5" as="geometry" />
         </mxCell>
-        <mxCell id="w4PSEf6JW52mtWiH3uxk-2" value="schema&#xa;导入" style="rounded=1;fillColor=#b3e2dc;arcSize=13;direction=west;whiteSpace=wrap;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="360" y="290" width="40" height="158.5" as="geometry" />
+        <mxCell id="w4PSEf6JW52mtWiH3uxk-2" value="schema&#xa;导入与&#xa;管理模块" style="rounded=1;fillColor=#b3e2dc;arcSize=13;direction=west;whiteSpace=wrap;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+          <mxGeometry x="365" y="290" width="44" height="158.5" as="geometry" />
         </mxCell>
         <mxCell id="w4PSEf6JW52mtWiH3uxk-7" value="管理员登陆与注册" style="rounded=1;fillColor=#b3e2dc;whiteSpace=wrap;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="560" y="290" width="20" height="158.5" as="geometry" />
+          <mxGeometry x="552" y="290" width="20" height="158.5" as="geometry" />
         </mxCell>
-        <mxCell id="w4PSEf6JW52mtWiH3uxk-4" value="多&#xa;样&#xa;化&#xa;自&#xa;然&#xa;语&#xa;言&#xa;查&#xa;询&#xa;管&#xa;理" style="rounded=1;fillColor=#b3e2dc" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="450" y="290" width="30" height="158.5" as="geometry" />
+        <mxCell id="w4PSEf6JW52mtWiH3uxk-4" value="自&#xa;然&#xa;语&#xa;言&#xa;查&#xa;询&#xa;管&#xa;理模块" style="rounded=1;fillColor=#b3e2dc;labelPosition=center;verticalLabelPosition=middle;align=center;verticalAlign=middle;whiteSpace=wrap;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+          <mxGeometry x="451" y="290" width="24" height="158.5" as="geometry" />
         </mxCell>
         <mxCell id="w4PSEf6JW52mtWiH3uxk-10" value="学生登陆与注册" style="rounded=1;fillColor=#b3e2dc;whiteSpace=wrap;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="670" y="290" width="20" height="160" as="geometry" />
