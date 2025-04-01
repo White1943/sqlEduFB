@@ -159,9 +159,6 @@
         <mxCell id="_8PwzIx_y7-3H37tJzUT-73" value="选择数据库模式" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;labelBackgroundColor=none;fillColor=#A8DADC;strokeColor=#457B9D;fontColor=#1D3557;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
           <mxGeometry x="625" y="106" width="80" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="_8PwzIx_y7-3H37tJzUT-74" value="审查自然语言描述" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;labelBackgroundColor=none;fillColor=#A8DADC;strokeColor=#457B9D;fontColor=#1D3557;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
-          <mxGeometry x="485" y="76" width="80" height="30" as="geometry" />
-        </mxCell>
         <mxCell id="_8PwzIx_y7-3H37tJzUT-82" value="将该条生成数据状态改为批准，作为实验报告题库" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;labelBackgroundColor=none;fillColor=#A8DADC;strokeColor=#457B9D;fontColor=#1D3557;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
           <mxGeometry x="625.06" y="620" width="82" height="59" as="geometry" />
         </mxCell>
